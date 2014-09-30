@@ -1,6 +1,4 @@
-h1. C++ style guide Falcon
-
-{{toc}}
+h1. C++ style guide
 
 h3. Пример
 
@@ -10,7 +8,7 @@ h3. Пример
 #include <stdexcept>
 #include "interfaces.h"
 
-namespace vi { namespace alpr {
+namespace rsdt { namespace alpr {
 
 
 PProcessResult select_best_result(std::vector<PProcessResult> const& variants);
@@ -39,7 +37,7 @@ private:
 typedef std::tr1::shared_ptr<Processor> PProcessor;
 
 
-}} // namespace vi::alpr
+}} // namespace rsdt::alpr
 
 </code></pre>
 h3. Отступы
@@ -85,6 +83,8 @@ struct E
 {
   int f() { return g; }
 };
+
+}
 </code></pre>
 
 h3. Include guard
@@ -98,15 +98,17 @@ h3. Include guard
 
 h3. Пространства имен
 
-Все проектно-специфичные вещи живут в @namespace company::project {  }@. Соответственно содержимое больщинства файлов заворачивается в него. Namespace не создает дополнительного отступа.
+Все проектно-специфичные вещи живут в @namespace company::project {  }@. Соответственно содержимое большинства файлов заворачивается в него. Namespace не создает дополнительного отступа.
+
+*Для данного курса* пространство имен должно быть @rsdt::assignment@, где @assignment@ — кодовое имя задания, устанавливаемое преподавателем.
 
 Примеры:
 <pre><code class="cpp">
-namespace vi { namespace alpr {
+namespace rsdt { namespace alpr {
 
 class MyClass;
 
-}} // namespace vi::alpr
+}} // namespace rsdt::alpr
 </code></pre>
 
 h3. Стиль именования
@@ -145,5 +147,6 @@ h3. Указатели на объекты
 В качестве указателей на объекты используется @std::tr1::shared_ptr<T>@, при этом рекомендуется для большинства классов объявлять тип указателя:
 <pre><code class="cpp">
 typedef std::tr1::shared_ptr<Processor> PProcessor;
+typedef std::tr1::shared_ptr<const Processor> PCProcessor;
 </code></pre>
 Не забывайте про существование @std::tr1::weak_ptr@ и @std::tr1::dynamic_pointer_cast@.
