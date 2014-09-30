@@ -1,0 +1,149 @@
+h1. C++ style guide Falcon
+
+{{toc}}
+
+h3. Пример
+
+<pre><code class="cpp">
+#pragma once
+
+#include <stdexcept>
+#include "interfaces.h"
+
+namespace vi { namespace alpr {
+
+
+PProcessResult select_best_result(std::vector<PProcessResult> const& variants);
+
+class IPlateRecognizer : private boost::noncopyable
+{
+public:
+  virtual ~IPlateRecognizer() { }
+  virtual PPlateRecognitionResult recognize_plate(MinImg const* rectified_plate_image,
+                                                 std::vector<std::string> const& template_names) = 0;
+};
+
+class Processor : public Object
+{
+public:
+  Processor(mxprops::PTree::ConstRef const& config,
+            Json::Value              const& reference_json);
+  PProcessResult process(MinImg const* source_image);
+
+private:
+  PPlateLocalizer  localizer;
+  PPlateFitter     fitter;
+  PPlateRecognizer recognizer;
+
+};
+typedef std::tr1::shared_ptr<Processor> PProcessor;
+
+
+}} // namespace vi::alpr
+
+</code></pre>
+h3. Отступы
+
+Ровно два пробела для уровней вложенности, удвоенный отступ либо выравнивание по скобке при переносе строки.
+
+Примеры:
+<pre><code class="cpp">
+virtual PPlateRecognitionResult recognize_plate(MinImg const* rectified_plate_image,
+                                                std::vector<std::string> const& template_names)
+{
+  while (true)
+  {
+    prepare_result();
+    return PPlateRecognitionResult();
+  }
+}
+
+class Processor
+{
+public:
+  Processor(mxprops::PTree::ConstRef const&  config,
+            Json::Value              const&  reference_json);
+};
+</code></pre>
+
+h3. Скобки { }
+
+Скобки на отдельных строках, за исключеием расположения обеих на одной строке и объявлений пространств имен.
+
+<pre><code class="cpp">
+namespace a {
+
+void b()
+{
+  if (c)
+  {
+    return d;
+  }
+}
+
+struct E
+{
+  int f() { return g; }
+};
+</code></pre>
+
+h3. Include guard
+
+Каждый @.h@-файл начинается строкой
+<pre><code class="cpp">
+#pragma once
+</code></pre>
+
+Никаких других ifdef-ов не нужно.
+
+h3. Пространства имен
+
+Все проектно-специфичные вещи живут в @namespace company::project {  }@. Соответственно содержимое больщинства файлов заворачивается в него. Namespace не создает дополнительного отступа.
+
+Примеры:
+<pre><code class="cpp">
+namespace vi { namespace alpr {
+
+class MyClass;
+
+}} // namespace vi::alpr
+</code></pre>
+
+h3. Стиль именования
+
+<pre><code class="cpp">
+#define MACROS_UPPERCASE
+
+int variable_with_underscores;
+
+void functions_lowercase_with_underscores();
+
+class PascalCaseClass : public ISomeDataProvider // IName for interfaces, PName for shared_ptr<IName>, PCName for shared_ptr<const IName>
+{
+  std::string const& some_data() const { return some_data_; }
+
+  void set_some_data(std::string const& some_data)
+  {
+    this->some_data_ = some_data;
+  }
+private
+  int private_member_ends_in_underscore_;
+  std::string some_data_;
+};
+</code></pre>
+
+h3. Exceptions
+
+Exceptions используются, но любой аргумент оператора @throw@ обязан быть потомком @std::exception@. Если в сомнениях — используй @std::runtime_error@.
+
+h3. Запрет копирования объектов
+
+Операторы присваивания и копирования классов запрещаем через @private@ наследование от @boost::noncopyable@.
+
+h3. Указатели на объекты
+
+В качестве указателей на объекты используется @std::tr1::shared_ptr<T>@, при этом рекомендуется для большинства классов объявлять тип указателя:
+<pre><code class="cpp">
+typedef std::tr1::shared_ptr<Processor> PProcessor;
+</code></pre>
+Не забывайте про существование @std::tr1::weak_ptr@ и @std::tr1::dynamic_pointer_cast@.
