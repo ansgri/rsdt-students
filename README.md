@@ -4,22 +4,13 @@ Documentation
 Intro
 -----
 
-cpp-boilerplate-minimal is a skeleton for writing image processing C++. It contains a solid working CMakeLists structure,
-some fundamental thirdparty libraries built from source, and an adapted OpenCV sample to get you up to speed quickly.
-
-_Why 'minimal'?_ Because there's a not-so-minimal version with useful infrastructure frameworks not _yet_ open-sourced.
-
-How to use
-----------
-
-1. Copy (probably not clone unless you know better) the contents of this repository
-2. Replace "CPPBP" and "cppbp" in the root CMakeLists.txt and files within cmake/ folder to some short codename of your project
-3. Set up prerequisite libraries Boost and OpenCV (see below)
-4. Build the sample
-5. build new stuff based on the sample
+This is a repo for "Recognition systems development tools" course. Students should have access to this repo.
+Based on https://github.com/ansgri/cpp-boilerplate-minimal (rsdt branch at the time of writing).
 
 Building sample
 ---------------
+
+### Windows
 
 Assuming Visual Studio 9 2008 as your sole installed compiler. Then from the root of the copied & customized cpp-boilerplate, run this:
 
@@ -30,12 +21,18 @@ Assuming Visual Studio 9 2008 as your sole installed compiler. Then from the roo
 
 To run the sample, OpenCV dlls must be in the system path.
 
+### Linux
+
+* mkdir build.cmake.debug && cd build.cmake.debug
+* cmake .. -DCMAKE_BUILD_TYPE=Debug
+* make -j5
+
 Setting up Boost
 ----------------
 
 If you already have Boost installed or built, just set the `BOOST_ROOT` environment variable, like this:
-    
-    set BOOST_ROOT=c:\Users\ansgri\thirdparty-src\boost_1_54_0
+
+    set BOOST_ROOT=c:\Users\ansgri\thirdparty-src\boost_1_55_0
 
 Otherwise, build it first following this approximate procedure:
 
@@ -44,6 +41,8 @@ Otherwise, build it first following this approximate procedure:
  * from the unpacked source dir execute `bootstrap.bat`
  * review the build options: `b2 --help`
  * build like this: `b2 link=shared variant=release threading=multi runtime-link=shared`
+
+On Linux this is similar and generally more streamlined. Just RTFM.
 
 Setting up OpenCV
 -----------------
