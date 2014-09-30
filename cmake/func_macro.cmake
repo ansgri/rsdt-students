@@ -35,9 +35,9 @@ endfunction(print_var)
 
 # Locates boost libraries of the specific version used in our project.
 # Argument(s): the components required.
-# 
+#
 # After invocation of this macro the variable ${Boost_LIBRARIES} will
-# contain the list of boost libraries you need to link against (for 
+# contain the list of boost libraries you need to link against (for
 # usage with target_link_libraries()).
 #
 # EXAMPLE:
@@ -52,14 +52,14 @@ macro(find_boost_libs libs)
   endif()
   set(Boost_USE_MULTITHREADED      ON)
   set(Boost_USE_STATIC_RUNTIME    OFF)
-  #find_package(Boost ${TTR_BOOST_VERSION} EXACT REQUIRED COMPONENTS ${ARGV})
-  find_package(Boost ${TTR_BOOST_VERSION} REQUIRED COMPONENTS ${ARGV})
+  #find_package(Boost ${CPPBP_BOOST_VERSION} EXACT REQUIRED COMPONENTS ${ARGV})
+  find_package(Boost ${CPPBP_BOOST_VERSION} REQUIRED COMPONENTS ${ARGV})
 endmacro(find_boost_libs)
 
 
 
 # performs add_subdirectory() on all subdirectories of the current
-# directory which contain CMakeLists.txt. Any arguments given to 
+# directory which contain CMakeLists.txt. Any arguments given to
 # this function will be treated as exceptions (i.e. the specified
 # directories will not be processed)
 #

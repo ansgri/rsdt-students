@@ -19,7 +19,7 @@ set(CPPBP_ARCH ${CPPBP_OPERATING_SYSTEM}${CPPBP_CPU_BITNESS})
 message(STATUS "Target architecture: ${CPPBP_ARCH}")
 
 # --- directories ---
-set(CPPBP_ROOT ${cppbp_SOURCE_DIR})
+set(CPPBP_ROOT ${rsdt_SOURCE_DIR})
 set(CPPBP_INCLUDE_ROOT ${CPPBP_ROOT}/include)
 set(CPPBP_LIB_ROOT ${CPPBP_ROOT}/lib/${CPPBP_ARCH})
 if(WIN32 AND NOT MSVC_IDE)
@@ -30,42 +30,21 @@ endif()
 
 # --- lists of libraries for linking ---
 if(WIN32)
-  set(CPPBP_OPENCV_LIBS 
-    optimized opencv_core242
-    optimized opencv_highgui242
-    optimized opencv_imgproc242
-    optimized opencv_video242
-    debug opencv_core242d
-    debug opencv_highgui242d
-    debug opencv_imgproc242d
-    debug opencv_video242d
+  set(CPPBP_OPENCV_LIBS
+    optimized opencv_core249
+    optimized opencv_highgui249
+    optimized opencv_imgproc249
+    optimized opencv_video249
+    debug opencv_core249d
+    debug opencv_highgui249d
+    debug opencv_imgproc249d
+    debug opencv_video249d
   )
 elseif(UNIX)
-  set(CPPBP_OPENCV_LIBS 
+  set(CPPBP_OPENCV_LIBS
     opencv_core
     opencv_highgui
     opencv_imgproc
     opencv_video
   )
 endif()
-
-if(WIN32)
-  set(CPPBP_JRTP_LIBS 
-    optimized jrtplib
-    debug jrtplib_d
-  )
-elseif(UNIX)
-  set(CPPBP_JRTP_LIBS
-    jrtp
-  )
-endif()
-
-set(CPPBP_FFMPEG_LIBS
-  avcodec
-  avcore
-  avdevice
-  avfilter
-  avformat
-  avutil
-  swscale
-)
