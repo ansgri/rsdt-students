@@ -76,8 +76,6 @@ include_directories(prj.third)
 include_directories(prj.third/log4cplus/include)
 # include_directories(prj.iitp)
 # include_directories(prj.min)
-include_directories(prj.core)
-include_directories(prj.sandbox)
 
 # output directories
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG ${CPPBP_ROOT}/bin.${CPPBP_ARCH}.debug)
@@ -90,5 +88,5 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY_RELEASE ${CPPBP_ROOT}/lib.${CPPBP_ARCH}.relea
 add_subdirectory(prj.third)
 # add_subdirectory(prj.iitp)
 # add_subdirectory(prj.min)
-add_subdirectory(prj.core)
-add_subdirectory(prj.sandbox)
+add_subdirectory(task.sample)
+add_subdirectory(task.imgio)
