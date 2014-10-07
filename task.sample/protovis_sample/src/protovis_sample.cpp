@@ -11,7 +11,7 @@ void main(int argc, char **argv)
   if (argc < 2)
     throw std::runtime_error("wrong number of arguments");
 
-  cv::Mat src = cv::imread(argv[1]);
+  auto const src = cv::imread(argv[1]);
   cv::imshow("src", src);
   while ((cv::waitKey(100) & 0xFF) != 27)
   {
