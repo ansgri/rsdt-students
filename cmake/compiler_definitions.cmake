@@ -41,7 +41,9 @@ if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
   message(STATUS "Using compiler flags -march=${BUILD_GCC_ARCH} and -tune=${BUILD_GCC_ARCH}")
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -march=${BUILD_GCC_ARCH} -mtune=${BUILD_GCC_ARCH} -fPIC -fno-omit-frame-pointer")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -march=${BUILD_GCC_ARCH} -mtune=${BUILD_GCC_ARCH} -fPIC -fno-omit-frame-pointer")
-  
+
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
   add_definitions(-DCOMFORT_GNU_COMPILER)
 
   # Strange, but this fixes some troubles with undefined references.
