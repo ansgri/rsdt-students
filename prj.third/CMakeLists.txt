@@ -5,4 +5,4 @@ add_subdirectory(libwebp)
 add_subdirectory(zlib)
 add_subdirectory(log4cplus)
 add_subdirectory(json-cpp)
-add_subdirectory(leptonica)
+# add_subdirectory(leptonica)  # FIXME: jpeglib.h include
