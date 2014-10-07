@@ -2,32 +2,32 @@
 
 namespace rsdt { namespace protovis {
 
-void verticalLinePlot
+void vertical_line_plot
 (
-  cv::Mat &canvas,
-  const cv::Scalar &color,
-  int thickness,
+  cv::Mat         & canvas,
+  cv::Scalar const& color,
+  int               thickness,
   std::vector<float> const& data,
-  float argScale,
-  float valueScale
+  float             arg_scale,
+  float             value_scale
 )
 {
   cv::Point prev(0, 0);
   for (size_t i = 0; i < data.size(); ++i)
   {
-    cv::Point next(static_cast<int>(data[i] * valueScale),
-                   static_cast<int>(i * argScale));
+    cv::Point next(static_cast<int>(data[i] * value_scale),
+                   static_cast<int>(i * arg_scale));
     cv::line(canvas, prev, next, color, thickness);
     prev = next;
   }
 }
 
-void plotHLine
+void plot_h_line
 (
-  cv::Mat &canvas,
-  int y,
-  const cv::Scalar &color,
-  int thickness
+  cv::Mat & canvas,
+  int       y,
+  cv::Scalar const& color,
+  int       thickness
 )
 {
   cv::line(canvas, cv::Point(0, y), cv::Point(canvas.cols, y), color, thickness);

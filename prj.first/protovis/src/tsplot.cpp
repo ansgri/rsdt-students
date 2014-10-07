@@ -3,46 +3,46 @@
 
 namespace rsdt { namespace protovis {
 
-void TimeSeriesPlot::pushValue(int frameNo, double value)
+void TimeSeriesPlot::push_value(int frame_no, double value)
 {
-  int yBaseline = canvas.rows;
-  double scale = canvas.rows / (maxValue - minValue);
-  int y = yBaseline - static_cast<int>(scale * (value - minValue));
-  if (lastY < 0)
-    lastY = y;
-  if (lastFrameNo < 0)
-    lastFrameNo = frameNo;
+  int y_baseline = canvas.rows;
+  double scale = canvas.rows / (max_value - min_value);
+  int y = y_baseline - static_cast<int>(scale * (value - min_value));
+  if (last_y < 0)
+    last_y = y;
+  if (last_frame_no < 0)
+    last_frame_no = frame_no;
 
-  if (!lastPreCursorImage.empty())
+  if (!last_pre_cursor_image.empty())
   {
-    cv::Mat preCursorImage(canvas, cv::Rect(lastFrameNo - originFrameNo, 0, 1, canvas.rows));
-    lastPreCursorImage.copyTo(preCursorImage);
+    cv::Mat pre_cursor_image(canvas, cv::Rect(last_frame_no - origin_frame_no, 0, 1, canvas.rows));
+    last_pre_cursor_image.copyTo(pre_cursor_image);
   }
 
-  if (frameNo - originFrameNo >= canvas.cols)
-    originFrameNo = lastFrameNo;
+  if (frame_no - origin_frame_no >= canvas.cols)
+    origin_frame_no = last_frame_no;
 
   cv::rectangle(canvas,
-                cv::Point(frameNo - originFrameNo, 0),
-                cv::Point(frameNo - originFrameNo + 8, canvas.rows),
-                bgColor,
+                cv::Point(frame_no - origin_frame_no, 0),
+                cv::Point(frame_no - origin_frame_no + 8, canvas.rows),
+                bg_color,
                 CV_FILLED);
   cv::line(canvas,
-           cv::Point(lastFrameNo - originFrameNo, lastY),
-           cv::Point(frameNo - originFrameNo, y),
+           cv::Point(last_frame_no - origin_frame_no, last_y),
+           cv::Point(frame_no - origin_frame_no, y),
            color,
            1);
 
-  cv::Mat preCursorImage(canvas, cv::Rect(frameNo - originFrameNo, 0, 1, canvas.rows));
-  lastPreCursorImage = cv::Mat();
-  preCursorImage.copyTo(lastPreCursorImage);
+  cv::Mat pre_cursor_image(canvas, cv::Rect(frame_no - origin_frame_no, 0, 1, canvas.rows));
+  last_pre_cursor_image = cv::Mat();
+  pre_cursor_image.copyTo(last_pre_cursor_image);
   cv::line(canvas,
-           cv::Point(frameNo - originFrameNo, 0),
-           cv::Point(frameNo - originFrameNo, canvas.rows),
-           curColor);
+           cv::Point(frame_no - origin_frame_no, 0),
+           cv::Point(frame_no - origin_frame_no, canvas.rows),
+           cur_color);
 
-  lastY = y;
-  lastFrameNo = frameNo;
+  last_y = y;
+  last_frame_no = frame_no;
 }
 
 }} // rsdt::protovis
