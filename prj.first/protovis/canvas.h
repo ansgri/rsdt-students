@@ -85,4 +85,13 @@ void line_plot
   std::vector<float> const& data
 );
 
+void multiline_surface_plot
+(
+  Canvas       & canvas,
+  cv::Mat const& data,
+  int            step,
+  int            phase,
+  float          z_scale
+);
+
 }} // rsdt::protovis
