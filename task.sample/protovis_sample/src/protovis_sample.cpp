@@ -35,25 +35,35 @@ void main(int argc, char **argv)
   cv::Mat src_grey;
   cv::cvtColor(src, src_grey, CV_RGB2GRAY);
 
-  cv::Mat src_float;
-  src_grey.convertTo(src_float, CV_32FC1);
-
-  protovis::Canvas canvas(canvas_mat);
-  // canvas.set_scale(0.8, 5);
-  // canvas.flip_y_axis();
-  multiline_surface_plot(canvas, src_float, 5, 0, 0.1);
-
-  // for (size_t i = 0; i < 60; ++i)
-  // {
-  //   canvas.shift_origin(0, -8);
-  //   protovis::line_plot(canvas, get_sample_data(1000, 3 + 10 * i));
-  // }
-
-  cv::imshow("src", src_grey);
-  cv::imshow("canvas", canvas_mat);
-  while ((cv::waitKey(100) & 0xFF) != 27)
+  int erosion_w = 0;
+  while (true)
   {
-    // nothing
+    if (erosion_w >= 15)
+      erosion_w = 0;
+
+    cv::Mat eroded;
+    cv::erode(src_grey, eroded, cv::Mat(), cv::Size(-1, -1), erosion_w);
+    ++erosion_w;
+
+    cv::Mat src_float;
+    eroded.convertTo(src_float, CV_32FC1);
+
+    protovis::Canvas canvas(canvas_mat);
+    // canvas.set_scale(0.8, 5);
+    // canvas.flip_y_axis();
+    multiline_surface_plot(canvas, src_float, 12, 0, 0.1);
+
+    // for (size_t i = 0; i < 60; ++i)
+    // {
+    //   canvas.shift_origin(0, -8);
+    //   protovis::line_plot(canvas, get_sample_data(1000, 3 + 10 * i));
+    // }
+
+    cv::imshow("src", src_grey);
+    cv::imshow("canvas", canvas_mat);
+
+    if ((cv::waitKey(300) & 0xFF) == 27)
+      break;
   }
 }
 
