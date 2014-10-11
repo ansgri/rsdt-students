@@ -59,7 +59,7 @@ void main(int argc, char **argv)
     //   protovis::line_plot(canvas, get_sample_data(1000, 3 + 10 * i));
     // }
 
-    cv::imshow("src", src_grey);
+    cv::imshow("src", eroded);
     cv::imshow("canvas", canvas_mat);
 
     if ((cv::waitKey(300) & 0xFF) == 27)
