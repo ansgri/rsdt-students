@@ -9,14 +9,16 @@ void vertical_line_plot
   int               thickness,
   std::vector<float> const& data,
   float             arg_scale,
-  float             value_scale
+  float             value_scale,
+  cv::Point const&  origin
 )
 {
-  cv::Point prev(0, 0);
+  cv::Point prev(origin);
   for (size_t i = 0; i < data.size(); ++i)
   {
     cv::Point next(static_cast<int>(data[i] * value_scale),
                    static_cast<int>(i * arg_scale));
+    next += origin;
     cv::line(canvas, prev, next, color, thickness);
     prev = next;
   }

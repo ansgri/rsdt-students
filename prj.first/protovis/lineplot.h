@@ -11,7 +11,8 @@ void vertical_line_plot
   int               thickness,
   std::vector<float> const& data,
   float             arg_scale,
-  float             value_scale
+  float             value_scale,
+  cv::Point const&  origin
 );
 
 void plot_h_line
