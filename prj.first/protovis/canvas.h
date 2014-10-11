@@ -34,6 +34,12 @@ public:
     origin_.y = iy;
   }
 
+  void shift_origin(int dix, int diy)
+  {
+    origin_.x += dix;
+    origin_.y += diy;
+  }
+
   void flip_y_axis()
   {
     y_scale_ *= -1;

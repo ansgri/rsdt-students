@@ -32,10 +32,11 @@ void main(int argc, char **argv)
   cv::Mat canvas_mat = cv::Mat::zeros(600, 800, CV_8UC3);
   protovis::Canvas canvas(canvas_mat);
   canvas.set_scale(0.8, 5);
+  canvas.flip_y_axis();
 
   for (size_t i = 0; i < 60; ++i)
   {
-    canvas.set_origin(0, canvas_mat.rows - 20 - i * 8);
+    canvas.shift_origin(0, -8);
     protovis::line_plot(canvas, get_sample_data(1000, 3 + 10 * i));
   }
 
