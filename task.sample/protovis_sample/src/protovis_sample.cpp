@@ -29,18 +29,18 @@ void main(int argc, char **argv)
     throw std::runtime_error("wrong number of arguments");
 
   cv::Mat src = cv::imread(argv[1]);
-  cv::Mat canvas = cv::Mat::zeros(600, 800, CV_8UC3);
+  cv::Mat canvas_mat = cv::Mat::zeros(600, 800, CV_8UC3);
+  protovis::Canvas canvas(canvas_mat);
+  canvas.set_scale(0.8, 5);
 
   for (size_t i = 0; i < 60; ++i)
   {
-    protovis::line_plot(canvas,
-                        cv::Scalar(0, 0, 128), 1,
-                        get_sample_data(1000, 3 + 10 * i),
-                        0.8, 5, cv::Point(0, canvas.rows - 20 - i * 8));
+    canvas.set_origin(0, canvas_mat.rows - 20 - i * 8);
+    protovis::line_plot(canvas, get_sample_data(1000, 3 + 10 * i));
   }
 
   cv::imshow("src", src);
-  cv::imshow("canvas", canvas);
+  cv::imshow("canvas", canvas_mat);
   while ((cv::waitKey(100) & 0xFF) != 27)
   {
     // nothing

@@ -4,35 +4,18 @@ namespace rsdt { namespace protovis {
 
 void line_plot
 (
-  cv::Mat         & canvas,
-  cv::Scalar const& color,
-  int               thickness,
-  std::vector<float> const& data,
-  float             arg_scale,
-  float             value_scale,
-  cv::Point const&  origin
+  Canvas          & canvas,
+  std::vector<float> const& data
 )
 {
-  cv::Point prev(origin);
-  for (size_t i = 0; i < data.size(); ++i)
-  {
-    cv::Point next(static_cast<int>(i * arg_scale),
-                   static_cast<int>(data[i] * value_scale));
-    next += origin;
-    cv::line(canvas, prev, next, color, thickness);
-    prev = next;
-  }
-}
+  if (data.empty())
+    throw std::runtime_error("data empty");
 
-void plot_h_line
-(
-  cv::Mat & canvas,
-  int       y,
-  cv::Scalar const& color,
-  int       thickness
-)
-{
-  cv::line(canvas, cv::Point(0, y), cv::Point(canvas.cols, y), color, thickness);
+  canvas.move_to(0, data[0]);
+  for (int i = 1; i < static_cast<int>(data.size()); ++i)
+  {
+    canvas.line_to(i, data[i]);
+  }
 }
 
 }} // rsdt::protovis
