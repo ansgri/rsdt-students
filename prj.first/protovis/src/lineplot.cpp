@@ -2,7 +2,7 @@
 
 namespace rsdt { namespace protovis {
 
-void vertical_line_plot
+void line_plot
 (
   cv::Mat         & canvas,
   cv::Scalar const& color,
@@ -16,8 +16,8 @@ void vertical_line_plot
   cv::Point prev(origin);
   for (size_t i = 0; i < data.size(); ++i)
   {
-    cv::Point next(static_cast<int>(data[i] * value_scale),
-                   static_cast<int>(i * arg_scale));
+    cv::Point next(static_cast<int>(i * arg_scale),
+                   static_cast<int>(data[i] * value_scale));
     next += origin;
     cv::line(canvas, prev, next, color, thickness);
     prev = next;

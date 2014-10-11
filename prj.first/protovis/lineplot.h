@@ -4,7 +4,7 @@
 
 namespace rsdt { namespace protovis {
 
-void vertical_line_plot
+void line_plot
 (
   cv::Mat         & canvas,
   cv::Scalar const& color,
