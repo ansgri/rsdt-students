@@ -1,1 +1,4 @@
-#add_subdirectory(something)
+add_subdirectory(io_jpeg_webp)
+add_subdirectory(io_tiff_png)
+add_subdirectory(io_webp_png)
+add_subdirectory(io_png_tiff)
