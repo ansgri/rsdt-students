@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<stdlib.h>
 #include<stdint.h>
+#include <libwebp/webp/decode.h>
 int main()
 {
 	FILE * pFile;
