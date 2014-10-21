@@ -1,4 +1,7 @@
 #include "tiffio.h"
+#include <stdlib.h>
+#include <stdint.h>
+#include <stdio.h>
 
 int main( int argc, const char** argv )
 {
@@ -14,7 +17,7 @@ int main( int argc, const char** argv )
         {
             TIFFReadScanline(tif, buf, row);
             for (uint32 col = 0; col < scanline; ++col) {
-                printf("%d ", ((int*)buf)[col]);
+                printf("%d ", ((int*))[col]);
             }
             
             printf("\n");
