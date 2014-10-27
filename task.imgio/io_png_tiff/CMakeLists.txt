@@ -5,5 +5,7 @@ add_executable(io_png_tiff
 )
 
 target_link_libraries(io_png_tiff
-  ${OpenCV_LIBS}
+  png
+  tiff
+  zlib
 )
