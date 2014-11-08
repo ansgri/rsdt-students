@@ -6,4 +6,5 @@ add_executable(io_tiff_png
 target_link_libraries(io_tiff_png
   tiff
   png
+  zlib
 )
