@@ -1,5 +1,5 @@
-#include "tiffio.h"
-#include "png.h"
+#include <libtiff/tiffio.h>
+#include <libpng/png.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -43,7 +43,7 @@ int writeToPNG(png_byte *buf, uint32 height, uint32 width, const char *path)
                  PNG_INTERLACE_NONE,
                  PNG_COMPRESSION_TYPE_DEFAULT,
                  PNG_FILTER_TYPE_DEFAULT);
-    
+
     row_pointers = (png_byte**)png_malloc(png_ptr, height * sizeof(png_byte*));
     for (uint32 y = 0; y < height; ++y) {
         png_byte *row = (png_byte*)png_malloc(png_ptr, sizeof (png_byte) * width * pixel_size);
@@ -55,18 +55,18 @@ int writeToPNG(png_byte *buf, uint32 height, uint32 width, const char *path)
             *row++ = pixel;
         }
     }
-    
+
     png_init_io (png_ptr, fp);
     png_set_rows (png_ptr, info_ptr, row_pointers);
     png_write_png (png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, NULL);
-    
+
     status = 0;
-    
+
     for (uint32 y = 0; y < height; ++y) {
         png_free(png_ptr, row_pointers[y]);
     }
     png_free(png_ptr, row_pointers);
-    
+
     png_destroy_write_struct(&png_ptr, &info_ptr);
     fclose(fp);
     return status;
@@ -83,7 +83,7 @@ int main(int argc, const char** argv)
         tsize_t scanline = TIFFScanlineSize(tif);
         unsigned char *buf = (unsigned char*)_TIFFmalloc(scanline);
         unsigned char *result = (unsigned char*)malloc(scanline * imagelength);
-        
+
         for (uint32 row = 0; row < imagelength; ++row)
         {
             TIFFReadScanline(tif, buf, row);
@@ -96,17 +96,17 @@ int main(int argc, const char** argv)
 //                printf("%d %d %d ", (int)buf[col], (int)buf[col + 1], (int)buf[col + 2]);
             }
 //            printf("\n");
-            
-            
+
+
             //http://www.libpng.org/pub/png/libpng-1.4.0-manual.pdf
             //http://www.libtiff.org/libtiff.html#FIO
         }
-        
+
         if (writeToPNG((png_byte*)result, imagelength, scanline / 3, "result.png") == 0)
         {
             printf("Done!\n");
         }
-        
+
         free(result);
         _TIFFfree(buf);
         TIFFClose(tif);
