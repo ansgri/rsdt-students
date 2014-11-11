@@ -117,8 +117,45 @@ static void save_morph_images(Mat const& src, int strel_shape, std::string const
   save_result("morph_blackhat_" + strel_name + ".png", src, dst);
 }
 
+static void skeletonize(Mat const& src)
+{
+  Mat const strel = cv::getStructuringElement(cv::MORPH_ELLIPSE, Size(3, 3));
+
+  Mat orig = 255 - src.clone();
+  Mat eroded = 255 - src.clone();
+  Mat curr;
+  Mat skeleton = Mat::zeros(src.size(), CV_8UC1);
+
+  int n = 200;
+  while (true)
+  {
+    cv::erode(eroded, eroded, strel); // contraction step
+    cv::dilate(eroded, curr, strel);
+    // save_result("er.png", curr, eroded);
+    // save_result("er.png", curr, orig - curr);
+    Mat delta = orig - curr;
+    skeleton += delta;
+    if (cv::countNonZero(delta) == 0)
+    {
+      printf("Sk finished\n");
+      break;
+    }
+    // save_result("sk.png", src, skeleton);
+    cv::imshow("sk", hstack(src, 255 - skeleton));
+    eroded.copyTo(orig);
+
+    if ((cv::waitKey(50) & 0xFF) == 'q')
+      return;
+  }
+  cv::waitKey(0);
+}
+
 static void save_filtered_images(Mat const& src)
 {
+  skeletonize(src);
+  skeletonize(255 - src);
+  return;
+
   // save_result("src.png", src, src);
 
   { // such blocks '{}' are to ensure deallocation of filtered images to preserve memory
