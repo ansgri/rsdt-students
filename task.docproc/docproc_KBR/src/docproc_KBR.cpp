@@ -1,14 +1,12 @@
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
 
-static int const BLUR_APERTURE = 15;
-static bool SAVE_SIDE_BY_SIDE = true;
+static int const BLUR_APERTURE = 5;
 
 using cv::Mat;
 using cv::Size;
 
 // docproc_KBR
-// фото карандашного рисунка на белом листе (testdata/paper_lined.jpg)
 // бинаризовать
 // развернуть
 
@@ -30,56 +28,49 @@ static cv::Mat hstack(cv::Mat const& m1, cv::Mat const& m2)
 
 static void save_result(cv::Mat const& src)
 {
-//  cv::namedWindow("Display frame", CV_WINDOW_AUTOSIZE);
   Mat dst;
-  cv::resize(src, dst, Size(src.cols / 3, src.rows / 3));
+  cv::resize(src, dst, Size(src.cols / 4, src.rows / 4));
   cv::imshow("Display frame", dst);
   cv::waitKey();
 }
 
-//void save_filtered_images(Mat const& src)
-//{
-//  cv::medianBlur(src, dst, 91); // getting rid of drawing ( lines AND big black squares )
-//  dst = cv::Scalar(255)- dst + src; // dst contains drawing
-//  cv::threshold(dst,dst,245,255, 0); // binarising
-//  
-//  int BLUR_APERTURE = 2;
-//  Mat const strel = cv::getStructuringElement(0, Size(BLUR_APERTURE, BLUR_APERTURE));
-//  cv::morphologyEx(dst, dst, cv::MORPH_CLOSE, strel); // getting rid of "black dots" on paper
-//  
-//  cv::imwrite("filtered.jpg", dst);
-//  cv::waitKey();
-//}
-
 void func2(Mat const& src)
 {
-  Mat dst;
-  cv::blur(src, dst, Size(BLUR_APERTURE, BLUR_APERTURE));
-//  save_result(dst);
+  Mat src_float;
+  src.convertTo(src_float, CV_32FC1);
+
+  Mat src_float_n;
+  src_float_n = src_float * (1.0 / 255);
+
+  Mat mean_float_n;
+  cv::blur(src_float_n, mean_float_n, Size(BLUR_APERTURE, BLUR_APERTURE));
+
+  Mat sqr_src_float_n = src_float_n.mul(src_float_n);
+  printf("sqr_src_float_n ok\n");
   
-  Mat mean;
-  dst.convertTo(mean, CV_32FC1);
-  mean = mean / 255;
-  printf("convert ok\n");
-//  mean = mean / 255;
+  Mat mean_sqr_src_float_n;
+  cv::blur(sqr_src_float_n, mean_sqr_src_float_n, Size(BLUR_APERTURE, BLUR_APERTURE));
+  printf("mean_sqr_src_float_n ok\n");
   
-//  mean = conv(dst) to float 1.0/255;
-  Mat sqr = mean * mean;
-  printf("sqr ok\n");
-  
-  Mat blur_sqr;
-  cv::blur(sqr, blur_sqr, Size(BLUR_APERTURE, BLUR_APERTURE));
-  printf("blur of sqr ok\n");
-  
-  Mat sd_f;
-  sqrt(blur_sqr - mean * mean, sd_f);
+  Mat var_float_n;
+  var_float_n = mean_sqr_src_float_n - mean_float_n.mul(mean_float_n);
+  printf("var_float_n ok\n");
+
+  Mat result;
+  sqrt(var_float_n, result);
   printf("sd_f ok\n");
-//  save_result(sd_f);
-  
+  // save_result(sd_f);
+
   Mat threshold;
   float k = -0.1;
-  threshold = mean + k * sd_f;
-  save_result(threshold);
+  threshold = mean_float_n + k * result;
+  // save_result(threshold);
+
+  Mat binarized;
+  binarized = Mat::zeros(src.size(), CV_32FC1);
+
+  src_float_n.copyTo(binarized, src_float_n > threshold);
+  save_result(binarized);
   
 //  Mat binarized;
 //  binarized = Mat::zeros(src.size, CV_8UC1);
