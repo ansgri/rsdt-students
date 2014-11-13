@@ -1,13 +1,11 @@
-#pragma once
-
 #include <libtiff/tiffio.h>
 #include <libpng/png.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <stdio.h>
+#include <cstdlib>
+#include <cstdint>
+#include <cstdio>
 
 
-int writeToPNG(png_byte *buf, uint32 height, uint32 width, const char *path)
+int write_to_png(png_byte *buf, uint32 height, uint32 width, const char *path)
 {
   FILE *fp;
   png_structp png_ptr = NULL;
@@ -84,8 +82,13 @@ int main(int argc, const char** argv)
 {
   if (!argv[1])
   {
-    printf("You need to specify the file\n");
-    return -1;
+    printf("You need to specify the input file\n");
+    return 1;
+  }
+  if (!argv[2])
+  {
+    printf("You need to specify the output file\n");
+    return 1;
   }
   TIFF* tif = TIFFOpen(argv[1], "r");
   if (tif)
@@ -107,7 +110,7 @@ int main(int argc, const char** argv)
       }
     }
 
-    if (writeToPNG((png_byte*)result, imagelength, scanline / 3, "result.png") == 0)
+    if (write_to_png((png_byte*)result, imagelength, scanline / 3, argv[2]) == 0)
     {
       printf("Done!\n");
     }
