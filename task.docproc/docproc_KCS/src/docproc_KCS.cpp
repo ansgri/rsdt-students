@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <opencv2/opencv.hpp>
 
 using cv::Mat;
@@ -6,21 +5,25 @@ using cv::Size;
 
 int main(int argc, char const** argv)
 {
-    Mat src, dst;
-    std::string image_name = argv[1];;
+    Mat src,src2, dst, dst2;
+    std::string image_name = argv[1];
+    std::string out_image_name = argv[2];
 
     src = cv::imread(image_name, CV_LOAD_IMAGE_GRAYSCALE);
-
-    cv::medianBlur(src, dst, 91); // getting rid of drawing ( lines AND big black squares )
-
-    dst = cv::Scalar(255)- dst + src; // dst contains drawing
-    cv::threshold(dst,dst,245,255, 0); // binarising
-
-    int BLUR_APERTURE = 2;
+    int BLUR_APERTURE = 100;
     Mat const strel = cv::getStructuringElement(0, Size(BLUR_APERTURE, BLUR_APERTURE));
-    cv::morphologyEx(dst, dst, cv::MORPH_CLOSE, strel); // getting rid of "black dots" on paper
 
-    cv::imwrite("filtered.jpg", dst);
-    cv::waitKey();
+    cv::morphologyEx(src, dst, cv::MORPH_ERODE, strel);
+    cv::morphologyEx(src, dst2, cv::MORPH_DILATE, strel);
+
+    dst.convertTo(dst, CV_32FC1);
+    dst2.convertTo(dst2, CV_32FC1);
+    src.convertTo(src, CV_32FC1);
+
+    Mat ret = (src-dst)/(dst2-dst); // local auto contrast: brightet pxls -> white, darkest -> black
+    ret = 255*ret;
+
+    cv::imwrite(out_image_name, ret);
+
     return 0;
 }
