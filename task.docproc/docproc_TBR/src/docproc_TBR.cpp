@@ -1,5 +1,6 @@
 #include <iostream>
 #include <opencv2/opencv.hpp>
+#include <iostream>
 
 using std::cout;
 using std::endl;
@@ -14,19 +15,20 @@ void show(const Mat& img, char title[])
 	cv::waitKey();
 }
 
-void save(const Mat& img, char name[])
+void save(const Mat& img, std::string name)
 {
 	cv::imwrite(name, img);
 }
 
 int main(int argc, char** argv)
 {
-	if (argc != 2)
+	if (argc != 3)
 	{
-		cout << "Bad usage: must have input image as sole arg" << endl;
+		cout << "Bad usage: must have input image and output name as sole arg" << endl;
 		return 1;
 	}
 	Mat src = cv::imread(argv[1], CV_LOAD_IMAGE_GRAYSCALE);
+	std::string out_name = argv[2];
 	Mat dst;
 
 	cv::GaussianBlur(src, src, Size(BLUR_APERTURE, BLUR_APERTURE), 0);
@@ -36,11 +38,12 @@ int main(int argc, char** argv)
 
 	Mat const strel = cv::getStructuringElement(cv::MORPH_CROSS, Size(MORPH_APERTURE, MORPH_APERTURE));
 	cv::morphologyEx(src, dst, cv::MORPH_CLOSE, strel);
-	//show(dst, "close_circle");
+	show(dst, "close_circle");
 	dst = cv::Scalar(255) - (dst - src);
-	cv::threshold(dst, dst, 232, 255, 0);
+	show(dst, "morph");
+	cv::threshold(dst, dst, 240, 255, 0);
 
 	//show(dst, "Result");
-	save(dst, "result.jpg");
+	save(dst, out_name);
 	return 0;
 }
