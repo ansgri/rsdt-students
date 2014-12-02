@@ -5,24 +5,37 @@ using cv::Size;
 
 int main(int argc, char const** argv)
 {
-    Mat src,src2, dst, dst2;
-    std::string image_name = "2.jpg";
-    std::string out_image_name = "out.jpg";
-    std::string out_image_name1 = "out1.jpg";
-
+	
+    if(argc<2)
+	{
+		printf("%s\n","invalid argument, need path to image");
+		return -1;
+	}
+	
+	
+    Mat src,local_minimum, local_maximum;
+    std::string image_name = argv[1];
+    std::string out_image_name = "local_autocontrast_out.jpg";
+	//read image
     src = cv::imread(image_name, CV_LOAD_IMAGE_GRAYSCALE);
-    //cv::resize(src, src, Size(),0.2, 0.2);
-    int BLUR_APERTURE = 300;
-    int BLUR_APERTURE2 = 10;
-    Mat const strel = cv::getStructuringElement(0, Size(BLUR_APERTURE, BLUR_APERTURE));
-    Mat const strel2 = cv::getStructuringElement(0, Size(BLUR_APERTURE2, BLUR_APERTURE2));
+    
+    
+	//create shape
+    int BLUR_APERTURE = 100;
+    Mat const shape = cv::getStructuringElement(0, Size(BLUR_APERTURE, BLUR_APERTURE));
+    
+    
+	//apply morphology filters
+    cv::morphologyEx(src, local_minimum, cv::MORPH_ERODE, shape);
+    cv::morphologyEx(src, local_maximum, cv::MORPH_DILATE, shape);
+    
+    //convert to float
+	local_minimum.convertTo(local_minimum, CV_32FC1);
+	local_maximum.convertTo(local_maximum, CV_32FC1);
+	src.convertTo(src, CV_32FC1);
 
-    cv::morphologyEx(src, dst, cv::MORPH_TOPHAT, strel);
-    cv::morphologyEx(dst, dst, cv::MORPH_BLACKHAT, strel2);
-    cv::morphologyEx(src, dst2, cv::MORPH_TOPHAT, strel);
-    cv::morphologyEx(dst2, dst2, cv::MORPH_BLACKHAT, strel2);
-    cv::imwrite(out_image_name1,dst); // new
-	cv::imwrite(out_image_name,  src - dst2); // new
-
+	
+	Mat contrast_result = 255*(src - local_minimum)/(local_maximum-local_minimum);
+	cv::imwrite("local_autocontrast_out_2.jpg", contrast_result);
     return 0;
 }
