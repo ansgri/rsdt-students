@@ -1,18 +1,49 @@
 #include <opencv2/opencv.hpp>
-
 using cv::Mat;
 using cv::Size;
 
+Mat rotate_img(Mat src, cv::Point center, float angle, float scale = 1.0)
+{
+  Mat ret;
+  Mat rot_mat = getRotationMatrix2D(center, angle, scale);
+  cv::warpAffine(src, ret, rot_mat, src.size());
+  return ret;
+}
+
+float find_vert_direction(Mat& src)
+{
+  Mat const strel = cv::getStructuringElement(0, Size(1, 50));
+  float max_angle = 5;
+  int max_iter = 20;
+  float min_mean = 500;
+  float ret_angle = 0;
+
+  for (int i = 0; i < max_iter; i++)
+  {
+    float angle = -max_angle + i*2*(max_angle/max_iter);
+    Mat filtred;
+    Mat rotated = rotate_img(src, cv::Point(src.cols/2, src.rows/2), angle); // rotate img
+    cv::morphologyEx(rotated, filtred, cv::MORPH_DILATE, strel); // vertical lines are deleted if angle is wrong
+
+    filtred = rotate_img(filtred, cv::Point(src.cols/2, src.rows/2), -angle); // rotate back
+    float mean = cv::mean(filtred(cv::Rect(src.cols/2-250, src.rows/2-250, 500, 500)))[0];
+
+    if (mean < min_mean)
+    {
+      min_mean = mean;
+      ret_angle = angle;
+    }
+
+  }
+
+  return ret_angle;
+}
+
 int main(int argc, char const** argv)
 {
-  if (!argv[1])
+  if (argc != 3)
   {
-    printf("You need to specify the input file\n");
-    return 1;
-  }
-  if (!argv[2])
-  {
-    printf("You need to specify the output file\n");
+    std::cout << "Bad usage: must have input image and ouput image as arg\n";
     return 1;
   }
   Mat src, erode_pic, dilate_pic;
@@ -34,7 +65,10 @@ int main(int argc, char const** argv)
 
   Mat out = (src - erode_pic)/(dilate_pic - erode_pic);
   out = 255*out;
-  cv::imwrite(out_image_name, out);
+
+  float angle = find_vert_direction(out);
+
+  cv::imwrite(out_image_name, rotate_img(out, cv::Point(src.cols/2, src.rows/2), angle));
 
   return 0;
 }
