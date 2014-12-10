@@ -1,5 +1,4 @@
 #include <iostream> 
-//#include <stdio.h>
 #include <libjpeg/jpeglib.h>
 #include <libtiff/tiffio.h>
 #include <stdlib.h> 
@@ -16,16 +15,16 @@ typedef struct
 
 METHODDEF(void) jee(j_common_ptr cinfo)
 {
-  jem *pJem = (jem *)cinfo->err;
-  longjmp(pJem->buf, 1);
+  jem *p_jem = (jem *)cinfo->err;
+  longjmp(p_jem->buf, 1);
 }
 
-void jpeg2tiff(const char* srcPath, const char* dstPath)
+void jpeg2tiff(char const* src_path, char const* dst_path)
 {
   jpeg_decompress_struct cinfo = {0};
   jem jerr;
 
-  FILE* infile = fopen(srcPath, "rb"); // source file 
+  FILE* infile = fopen(src_path, "rb"); // source file 
   if (infile == 0)
     throw std::runtime_error("Error when open src image");
 
@@ -49,7 +48,7 @@ void jpeg2tiff(const char* srcPath, const char* dstPath)
   const int n_channels = cinfo.output_components;
   const int row_stride = width * n_channels;
 
-  TIFF* outfile = TIFFOpen(dstPath, "w");
+  TIFF* outfile = TIFFOpen(dst_path, "w");
   if (outfile == 0)
   {
     fclose(infile);
@@ -84,8 +83,8 @@ void jpeg2tiff(const char* srcPath, const char* dstPath)
     }
     
     // Write
-    int tiffRes = TIFFWriteScanline(outfile, bufrow, cinfo.output_scanline-1, 0);
-    if (tiffRes < 0)
+    int tiff_res = TIFFWriteScanline(outfile, bufrow, cinfo.output_scanline-1, 0);
+    if (tiff_res < 0)
     {
       fclose(infile);
       TIFFClose(outfile);
