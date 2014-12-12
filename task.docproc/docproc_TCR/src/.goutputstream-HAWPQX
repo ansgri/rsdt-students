@@ -1,0 +1,94 @@
+#include <opencv2/opencv.hpp>
+#include <stdio.h>
+#include <stdlib.h>
+static int const BLUR_APERTURE = 50;
+static int const WIDTH = 1;
+static int const HEIGHT = 10;
+
+using cv::Mat;
+using cv::Size;
+using namespace cv;
+
+
+double rotate( const Mat& src)
+{
+	Mat max;
+    Mat const shape = cv::getStructuringElement(0, Size(WIDTH, HEIGHT));
+    cv::morphologyEx(src, max, cv::MORPH_GRADIENT, shape);
+	double angle = 0;
+	double scale = 1;
+	Point center = Point( src.cols/2, src.rows/2 ); 
+	printf("asd\n");
+	for(int i = -10 ; i <= 10 ; i++)
+	{
+		Mat warp_rotate_dst;
+		Mat rot_mat = getRotationMatrix2D( center, i, scale );
+		warpAffine( src, warp_rotate_dst, rot_mat, src.size() );
+		Mat gradient_mat;
+		cv::morphologyEx(warp_rotate_dst, gradient_mat, cv::MORPH_GRADIENT, shape);
+		double a = cv::sum(max)[0];
+		double b = cv::sum(gradient_mat)[0];
+		cv::imwrite("degree.jpg", gradient_mat);
+		printf("%f and %f\n",a,b);
+		if(b > a)
+		{
+			angle =i;
+			max = gradient_mat;
+		}
+		
+	}
+	return angle;
+	
+	
+} 
+
+
+
+int main(int argc, char const** argv)
+{
+	
+    if(argc<2)
+	{
+		printf("%s\n","invalid argument, need path to image");
+		return -1;
+	}
+	
+	
+    Mat src,local_minimum, local_maximum;
+    std::string image_name = argv[1];
+    std::string out_image_name = "local_autocontrast_out.jpg";
+	//read image
+    src = cv::imread(image_name, CV_LOAD_IMAGE_GRAYSCALE);
+    
+    
+	//create shape
+    Mat const shape = cv::getStructuringElement(0, Size(BLUR_APERTURE, BLUR_APERTURE));
+    
+    
+	//apply morphology filters
+    cv::morphologyEx(src, local_minimum, cv::MORPH_ERODE, shape);
+    cv::morphologyEx(src, local_maximum, cv::MORPH_DILATE, shape);
+    //convert to float
+	local_minimum.convertTo(local_minimum, CV_32FC1);
+	local_maximum.convertTo(local_maximum, CV_32FC1);
+	src.convertTo(src, CV_32FC1);
+
+	// Transform it into the C++ cv::Mat format
+	cv::Mat image(src); 
+
+	// Setup a rectangle to define your region of interest
+	cv::Rect myROI(src.cols/2-300, src.rows/2-300, 800, 800);
+
+	// Crop the full image to that image contained by the rectangle myROI
+	// Note that this doesn't copy the data
+	cv::Mat croppedImage = image(myROI);
+
+	imwrite("cropimage.jpg",croppedImage);
+	double angle = rotate(croppedImage);
+	Mat warp_rotate_dst;
+	Point center = Point( src.cols/2, src.rows/2 ); 
+	Mat rot_mat = getRotationMatrix2D( center, angle, 1.1 );
+	warpAffine( src, warp_rotate_dst, rot_mat, src.size() );
+	cv::imwrite("local_autocontrast_out_2.jpg", warp_rotate_dst);
+    return 0;
+}

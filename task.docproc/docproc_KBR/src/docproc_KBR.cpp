@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
 
-static int const BLUR_APERTURE = 5;
+static int const BLUR_APERTURE = 200;
 
 using cv::Mat;
 using cv::Size;
@@ -62,8 +62,9 @@ void func2(Mat const& src)
   // save_result(sd_f);
 
   Mat threshold;
-  float k = -0.1;
-  threshold = mean_float_n + k * result;
+  float k = -0.9;
+  float d = 0.00;
+  threshold = mean_float_n + k * result + d;
   // save_result(threshold);
 
   Mat binarized;
