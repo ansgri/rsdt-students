@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <opencv2/opencv.hpp>
 
-static int const BLUR_APERTURE = 200;
+static int const BLUR_APERTURE = 3;
+static int const MORPH_APERTURE = 40;
+static int const MORPH_APERTURE_WIDTH = 3;
+static int const MORPH_APERTURE_HEIGHT = 60;
+static int const INITIAL_ANGLE = -360;
 
 using cv::Mat;
 using cv::Size;
@@ -10,79 +14,88 @@ using cv::Size;
 // бинаризовать
 // развернуть
 
-static cv::Mat hstack(cv::Mat const& m1, cv::Mat const& m2)
-{
-  if (m1.empty())
-    return m2.clone();
-  if (m2.empty())
-    return m1.clone();
-  
-  cv::Mat r(std::max(m1.rows, m2.rows), m1.cols + m2.cols, m1.type());
-  r = cv::Scalar(0);
-  cv::Mat d1 = r(cv::Rect(cv::Point(0, 0), m1.size()));
-  cv::Mat d2 = r(cv::Rect(cv::Point(m1.cols, 0), m2.size()));
-  m1.copyTo(d1);
-  m2.copyTo(d2);
-  return r;
-}
-
-static void save_result(cv::Mat const& src)
+void save_result(cv::Mat const& src, std::string name)
 {
   Mat dst;
-  cv::resize(src, dst, Size(src.cols / 4, src.rows / 4));
-  cv::imshow("Display frame", dst);
+  cv::resize(src, dst, Size(src.cols / 3, src.rows / 3));
+  cv::imshow(name, dst);
   cv::waitKey();
+  cv::destroyWindow(name);
 }
 
-void func2(Mat const& src)
+void rotate_mat(cv::Mat const& src, cv::Mat& dst, double angle)
 {
-  Mat src_float;
-  src.convertTo(src_float, CV_32FC1);
+    Mat rotation_maxtrix = cv::getRotationMatrix2D(cv::Point(src.cols / 2.0, src.rows / 2.0), angle, 1.0);
+    cv::warpAffine(src, dst, rotation_maxtrix, src.size());
+}
 
-  Mat src_float_n;
-  src_float_n = src_float * (1.0 / 255);
+void rotation(cv::Mat const& src)
+{
+  Mat src_blur;
+  cv::GaussianBlur(src, src_blur, Size(BLUR_APERTURE, BLUR_APERTURE), 0);
 
-  Mat mean_float_n;
-  cv::blur(src_float_n, mean_float_n, Size(BLUR_APERTURE, BLUR_APERTURE));
+  Mat src_grad;
+  Sobel(src_blur, src_grad, CV_16S, 1, 0);
+  // save_result(src_grad, "grad");
 
-  Mat sqr_src_float_n = src_float_n.mul(src_float_n);
-  printf("sqr_src_float_n ok\n");
-  
-  Mat mean_sqr_src_float_n;
-  cv::blur(sqr_src_float_n, mean_sqr_src_float_n, Size(BLUR_APERTURE, BLUR_APERTURE));
-  printf("mean_sqr_src_float_n ok\n");
-  
-  Mat var_float_n;
-  var_float_n = mean_sqr_src_float_n - mean_float_n.mul(mean_float_n);
-  printf("var_float_n ok\n");
+  Mat src_grad_abs;
+  convertScaleAbs(src_grad, src_grad_abs);
+  // save_result(src_grad_abs, "abs_grad");
+
+  double max_angle = INITIAL_ANGLE;
+  double max = 0;
+  double deviation = 30;
+  double step = 1;
+
+  for (double angle = 360 - deviation; angle <= 360 + deviation; angle += step)
+  {
+    Mat temp;
+    rotate_mat(src_grad_abs, temp, (angle < 360 ? angle : angle - 360));
+    Mat struct_element = cv::getStructuringElement(cv::MORPH_RECT, Size(MORPH_APERTURE_WIDTH, MORPH_APERTURE_HEIGHT));
+
+    Mat temp_open;
+    cv::morphologyEx(temp, temp_open, cv::MORPH_OPEN, struct_element);
+    // cv::morphologyEx(temp, temp_close, cv::MORPH_CLOSE, struct_element);
+    // save_result(temp_open, "morph_open");
+    // save_result(temp_close, "morph_closed");
+    double mean = cv::mean(temp_open)[0];
+
+
+
+    printf("mean = %f, angle = %f\n", mean, (angle < 360 ? angle : angle - 360));
+    if (mean > max || max_angle == INITIAL_ANGLE)
+    {
+      max_angle = (angle < 360 ? angle : angle - 360);
+      max = mean;
+    }
+  }
+  printf("max mean = %f, max angle = %f\n", max, max_angle);
 
   Mat result;
-  sqrt(var_float_n, result);
-  printf("sd_f ok\n");
-  // save_result(sd_f);
+  rotate_mat(src, result, max_angle);
+  save_result(src, "src");
+  save_result(result, "result");
+}
 
-  Mat threshold;
-  float k = -0.9;
-  float d = 0.00;
-  threshold = mean_float_n + k * result + d;
-  // save_result(threshold);
+void binarization(Mat const& src)
+{
+  Mat src_blured;
+  // cv::blur(src, src_blured, Size(BLUR_APERTURE, BLUR_APERTURE));
+  cv::GaussianBlur(src, src_blured, Size(BLUR_APERTURE, BLUR_APERTURE), 0);
+  // save_result(src_blured, "blured");
 
-  Mat binarized;
-  binarized = Mat::zeros(src.size(), CV_32FC1);
+  Mat src_ex;
+  Mat struct_element = cv::getStructuringElement(cv::MORPH_CROSS, Size(MORPH_APERTURE, MORPH_APERTURE));
+  cv::morphologyEx(src_blured, src_ex, cv::MORPH_CLOSE, struct_element);
+  // save_result(src_ex, "morph");
 
-  src_float_n.copyTo(binarized, src_float_n > threshold);
-  save_result(binarized);
-  
-//  Mat binarized;
-//  binarized = Mat::zeros(src.size, CV_8UC1);
-  
-//  Mat binarized_fg;
-//  binarized_fg = Mat::ones(src.size, CV_8UC1);
-  
-//  bin_fg.copyTo(binarized, src_f > thershold);
-  
-  // binarized[src_f > thershold] = cv::Scalar(255)
-//  save_result(binarized);
+  Mat reverse;
+  reverse = cv::Scalar(255) - (src_ex - src_blured);
+  // save_result(reverse, "reverse");
+
+  Mat result;
+  cv::threshold(reverse, result, 230, 255, 0);
+  save_result(result, "result");
 }
 
 int main(int argc, char const** argv)
@@ -94,7 +107,8 @@ int main(int argc, char const** argv)
     std::string const input_image_path = argv[1];
     Mat const input_image = cv::imread(input_image_path, CV_LOAD_IMAGE_GRAYSCALE);
     
-    func2(input_image);
+    binarization(input_image);
+    rotation(input_image);
     
     return 0;
   }
