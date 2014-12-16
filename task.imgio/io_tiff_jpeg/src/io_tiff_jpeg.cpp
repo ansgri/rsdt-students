@@ -35,7 +35,7 @@ void tiff_to_jpeg(char const* src_path, char const* dst_path)
                               (float)TIFFGetB(raster[i * width + j])) / 3. + 0.5);
     gray_data[((height - 1 - i) * width + j) * 3] = gray_pix;
     gray_data[((height - 1 - i) * width + j) * 3 + 1] = gray_pix;
-	  gray_data[((height - 1 - i) * width + j) * 3 + 2] = gray_pix;
+    gray_data[((height - 1 - i) * width + j) * 3 + 2] = gray_pix;
 	}
   }
   _TIFFfree(raster);
@@ -70,8 +70,8 @@ void tiff_to_jpeg(char const* src_path, char const* dst_path)
 
   while (cinfo.next_scanline < cinfo.image_height)
   {
-	  row_pointer[0] = & gray_data[cinfo.next_scanline * row_stride];
-	  (void)jpeg_write_scanlines(& cinfo, row_pointer, 1);
+    row_pointer[0] = & gray_data[cinfo.next_scanline * row_stride];
+    (void)jpeg_write_scanlines(& cinfo, row_pointer, 1);
   }
 
   delete[] gray_data;
@@ -84,21 +84,21 @@ int main(int argc, const char** argv)
 {
   if (!argv[1])
   {
-	  std::cout << "Please, specify the input file\n";
-	  return 1;
+    std::cout << "Please, specify the input file\n";
+    return 1;
   }
   if (!argv[2])
   {
-	  std::cout << "Please, specify the output file\n";
-	  return 1;
+    std::cout << "Please, specify the output file\n";
+    return 1;
   }
   try
   {
-	  tiff_to_jpeg(argv[1], argv[2]);
+    tiff_to_jpeg(argv[1], argv[2]);
   }
   catch (std::exception e)
   {
-	  std::cout << e.what() << std::endl;
+    std::cout << e.what() << std::endl;
   }
   return 0;
 }
