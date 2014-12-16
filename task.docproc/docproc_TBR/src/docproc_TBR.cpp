@@ -59,7 +59,7 @@ double morph_mean(const Mat& src, double angle)
 {
 	Mat dst = src.clone();
 	rotate(dst, angle, dst);
-	Mat const strel = cv::getStructuringElement(cv::MORPH_RECT, Size(1, 8));
+	Mat const strel = cv::getStructuringElement(cv::MORPH_RECT, Size(1, 16));
 	cv::morphologyEx(dst, dst, cv::MORPH_OPEN, strel);
 	// show(dst, "Morph");
 	double mean = cv::mean(dst)[0];
@@ -87,7 +87,7 @@ void smart_rotation(char from[], char to[], int step = 1)
 	// show(abs_grad_x, "grad");
 	// Calculate max intensity from angle
 	std::pair<double, double> max = std::make_pair(0, morph_mean(abs_grad_x, 0));
-	for (double angle = step; angle < 360; angle += step)
+	for (double angle = -30; angle < 30; angle += step)
 	{
 		double mean = morph_mean(abs_grad_x, angle);
 		if (mean > max.second)
@@ -106,7 +106,7 @@ int main(int argc, char** argv)
 		return 1;
 	}
 	binarization(argv[1], argv[2]);
-	smart_rotation(argv[1], argv[3], 3);
+	smart_rotation(argv[1], argv[3], 2);
 	return 0;
 }
 
