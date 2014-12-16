@@ -51,8 +51,8 @@ void tiff_to_jpeg(char const* src_path, char const* dst_path)
   jpeg_create_compress(& cinfo);
   if ((outfile = fopen(dst_path, "wb")) == NULL) 
   {
-	  delete[] gray_data;
-	  throw std::invalid_argument("Invalid dst image");
+    delete[] gray_data;
+    throw std::invalid_argument("Invalid dst image");
   }
   jpeg_stdio_dest(& cinfo, outfile);
 
