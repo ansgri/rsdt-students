@@ -16,11 +16,12 @@ using cv::Size;
 
 void save_result(cv::Mat const& src, std::string name)
 {
-  Mat dst;
-  cv::resize(src, dst, Size(src.cols / 3, src.rows / 3));
-  cv::imshow(name, dst);
-  cv::waitKey();
-  cv::destroyWindow(name);
+  cv::imwrite(name, src);
+  // Mat dst;
+  // cv::resize(src, dst, Size(src.cols / 3, src.rows / 3));
+  // cv::imshow(name, dst);
+  // cv::waitKey();
+  // cv::destroyWindow(name);
 }
 
 void rotate_mat(cv::Mat const& src, cv::Mat& dst, double angle)
@@ -29,7 +30,7 @@ void rotate_mat(cv::Mat const& src, cv::Mat& dst, double angle)
     cv::warpAffine(src, dst, rotation_maxtrix, src.size());
 }
 
-void rotation(cv::Mat const& src)
+void rotation(cv::Mat const& src, std::string const image_path)
 {
   Mat src_blur;
   cv::GaussianBlur(src, src_blur, Size(BLUR_APERTURE, BLUR_APERTURE), 0);
@@ -62,22 +63,22 @@ void rotation(cv::Mat const& src)
 
 
 
-    printf("mean = %f, angle = %f\n", mean, (angle < 360 ? angle : angle - 360));
+    // printf("mean = %f, angle = %f\n", mean, (angle < 360 ? angle : angle - 360));
     if (mean > max || max_angle == INITIAL_ANGLE)
     {
       max_angle = (angle < 360 ? angle : angle - 360);
       max = mean;
     }
   }
-  printf("max mean = %f, max angle = %f\n", max, max_angle);
+  // printf("max mean = %f, max angle = %f\n", max, max_angle);
 
   Mat result;
   rotate_mat(src, result, max_angle);
-  save_result(src, "src");
-  save_result(result, "result");
+  // save_result(src, "src");
+  save_result(result, image_path);
 }
 
-void binarization(Mat const& src)
+void binarization(Mat const& src, std::string const image_path)
 {
   Mat src_blured;
   // cv::blur(src, src_blured, Size(BLUR_APERTURE, BLUR_APERTURE));
@@ -95,20 +96,22 @@ void binarization(Mat const& src)
 
   Mat result;
   cv::threshold(reverse, result, 230, 255, 0);
-  save_result(result, "result");
+  save_result(result, image_path);
 }
 
 int main(int argc, char const** argv)
 {
   try
   {
-    if (argc != 2)
+    if (argc != 4)
       throw std::runtime_error("Bad usage: must have input image as sole arg");
     std::string const input_image_path = argv[1];
+    std::string const bin_image_path = argv[2];
+    std::string const rotate_image_path = argv[3];
     Mat const input_image = cv::imread(input_image_path, CV_LOAD_IMAGE_GRAYSCALE);
     
-    binarization(input_image);
-    rotation(input_image);
+    binarization(input_image, bin_image_path);
+    rotation(input_image, rotate_image_path);
     
     return 0;
   }
