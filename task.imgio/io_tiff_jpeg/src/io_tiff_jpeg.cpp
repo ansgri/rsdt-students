@@ -29,14 +29,14 @@ void tiff_to_jpeg(char const* src_path, char const* dst_path)
   for (int i = 0; i < height; ++i) 
   {
     for (int j = 0; j < width; ++j) 
-	{
-	  uint8 gray_pix = (uint8)(((float)TIFFGetR(raster[i * width + j]) +
-                              (float)TIFFGetG(raster[i * width + j]) +
-                              (float)TIFFGetB(raster[i * width + j])) / 3. + 0.5);
-    gray_data[((height - 1 - i) * width + j) * 3] = gray_pix;
-    gray_data[((height - 1 - i) * width + j) * 3 + 1] = gray_pix;
-    gray_data[((height - 1 - i) * width + j) * 3 + 2] = gray_pix;
-	}
+    {
+      uint8 gray_pix = (uint8)(((float)TIFFGetR(raster[i * width + j]) +
+                                (float)TIFFGetG(raster[i * width + j]) +
+                                (float)TIFFGetB(raster[i * width + j])) / 3. + 0.5);
+      gray_data[((height - 1 - i) * width + j) * 3] = gray_pix;
+      gray_data[((height - 1 - i) * width + j) * 3 + 1] = gray_pix;
+      gray_data[((height - 1 - i) * width + j) * 3 + 2] = gray_pix;
+    }
   }
   _TIFFfree(raster);
   TIFFClose(tif);
