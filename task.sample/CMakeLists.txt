@@ -1,3 +1,4 @@
 add_subdirectory(camshift)
 add_subdirectory(protovis_sample)
 add_subdirectory(demo_filters)
+add_subdirectory(errors)
