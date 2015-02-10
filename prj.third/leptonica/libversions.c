@@ -46,7 +46,7 @@
 #endif
 
 #if HAVE_LIBTIFF
-#include "tiffio.h"
+#include "libtiff/tiffio.h"
 #endif
 
 #if HAVE_LIBZ
