@@ -73,6 +73,9 @@ static void printUsage()
         "  --try_gpu (yes|no)\n"
         "      Try to use GPU. The default value is 'no'. All default values\n"
         "      are for CPU mode.\n"
+        "\nUndistortion Flags:\n"
+        "  --camera <camera.yml>\n"
+        "      Calibration data to undistort images. Default = no undistortion.\n"
         "\nMotion Estimation Flags:\n"
         "  --work_megapix <float>\n"
         "      Resolution for image registration step. The default is 0.6 Mpx.\n"
@@ -127,6 +130,7 @@ double work_megapix = 0.6;
 double seam_megapix = 0.1;
 double compose_megapix = -1;
 float conf_thresh = 1.f;
+string calibration_filename;
 string features_type = "surf";
 string ba_cost_func = "ray";
 string ba_refine_mask = "xxxxx";
@@ -171,6 +175,11 @@ static int parseCmdArgs(int argc, char** argv)
                 cout << "Bad --try_gpu flag value\n";
                 return -1;
             }
+            i++;
+        }
+        else if (string(argv[i]) == "--camera")
+        {
+            calibration_filename = argv[i + 1];
             i++;
         }
         else if (string(argv[i]) == "--work_megapix")
@@ -324,6 +333,16 @@ static int parseCmdArgs(int argc, char** argv)
 }
 
 
+void read_calibration(Mat & camera_matrix, Mat & distortion_coeffs)
+{
+    FileStorage fs(calibration_filename, FileStorage::READ);
+
+    fs["camera_matrix"] >> camera_matrix;
+    fs["distortion_coefficients"] >> distortion_coeffs;
+
+    fs.release();    
+}
+
 int main(int argc, char* argv[])
 {
 #if ENABLE_LOG
@@ -372,7 +391,7 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-    Mat full_img, img;
+    Mat raw_img, full_img, img;
     vector<ImageFeatures> features(num_images);
     vector<Mat> images(num_images);
     vector<Mat> feature_images(num_images);
@@ -380,10 +399,24 @@ int main(int argc, char* argv[])
     double seam_work_aspect = 1;
 
     // namedWindow("features", WINDOW_NORMAL);
+    Mat camera_matrix, distortion_coeffs;
+    if (!calibration_filename.empty())
+    {
+        read_calibration(camera_matrix, distortion_coeffs);
+    }
 
     for (int i = 0; i < num_images; ++i)
     {
-        full_img = imread(img_names[i]);
+        raw_img = imread(img_names[i]);
+        if (calibration_filename.empty())
+        {
+            full_img = raw_img;
+        }
+        else
+        {
+            undistort(raw_img, full_img, camera_matrix, distortion_coeffs);
+        }
+
         full_img_sizes[i] = full_img.size();
 
         if (full_img.empty())
