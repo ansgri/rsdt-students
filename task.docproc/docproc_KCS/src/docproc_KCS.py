@@ -1,0 +1,77 @@
+import cv2
+import numpy as np
+import sys
+import argparse
+
+
+def create_parser():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--input')
+    parser.add_argument('--output')
+    return parser
+
+
+def rotate_img(src, center, angle, scale=1.0):
+    rot_mat = cv2.getRotationMatrix2D(center, angle, scale)
+    ret = cv2.warpAffine(src, rot_mat, (src.shape[1], src.shape[0]))
+    return ret
+
+
+def find_vert_direction(src):
+    strel = cv2.getStructuringElement(0, (1, 50))
+    max_angle = 80
+    max_iter = 80
+    min_mean = 500
+    ret_angle = 0
+
+    for i in range(max_iter):
+        angle = -max_angle + i*2*(max_angle/max_iter)
+        rows, cols = src.shape
+        rotated = rotate_img(src, (cols/2, rows/2), angle)
+        filtered = cv2.morphologyEx(rotated, cv2.MORPH_DILATE, strel)
+        filtered = rotate_img(filtered, (cols/2, rows/2), -angle)
+
+        mean = np.mean(filtered[cols/2-250:cols/2+250, rows/2-250:rows/2+250])
+
+        if mean < min_mean:
+            min_mean = mean
+            ret_angle = angle
+    return ret_angle
+
+
+def main():
+
+    parser = create_parser()
+    ionames = parser.parse_args(sys.argv[1:])
+    input_file = ionames.input
+    output_file = ionames.output
+    if input_file is None or output_file is None:
+        print("Bad usage. Specify --input and --output names.")
+        return
+
+    img = cv2.imread(input_file, 0)
+
+    rows, cols = img.shape
+
+    blur_apperture = 100
+    strel = cv2.getStructuringElement(0, (blur_apperture, blur_apperture))
+
+    erode_pic = cv2.morphologyEx(img, cv2.MORPH_ERODE, strel)
+    dilate_pic = cv2.morphologyEx(img, cv2.MORPH_DILATE, strel)
+    erode_pic = cv2.threshold(erode_pic, 50, 50, 2)[1]
+
+    erode_pic = np.float32(erode_pic)
+    dilate_pic = np.float32(dilate_pic)
+    img = np.float32(img)
+    out = (img - erode_pic)/(dilate_pic - erode_pic)
+
+    out *= 255
+
+    angle = find_vert_direction(img)
+    final = rotate_img(out, (cols/2, rows/2), angle)
+    cv2.imwrite(output_file, final)
+
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
+main()
