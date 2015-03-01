@@ -48,97 +48,194 @@ static cv::Mat vstack(cv::Mat const& m1, cv::Mat const& m2)
 
 static void save_result(std::string const& name, cv::Mat const& src, cv::Mat const& dst)
 {
-    cv::imwrite(name, SAVE_SIDE_BY_SIDE ? hstack(src, dst) : dst);
+  cv::imshow("filtered", hstack(src, dst));
+  cv::waitKey(0);
+  // cv::imwrite(name, SAVE_SIDE_BY_SIDE ? hstack(src, dst) : dst);
 }
 
 
 static void save_morph_images(Mat const& src, int strel_shape, std::string const& strel_name)
 {
-    Mat const strel = cv::getStructuringElement(strel_shape, Size(BLUR_APERTURE, BLUR_APERTURE));
-    Mat dst;
-    
-    cv::dilate(src, dst, strel);
-    save_result("morph_dilate_" + strel_name + ".png", src, dst);
+  int const BG_MORPH_APERTURE = 15;
+  int const CONTRAST_MORPH_APERTURE = 100;
+  
+  Mat const strel_bg = cv::getStructuringElement(strel_shape, Size(BG_MORPH_APERTURE, BG_MORPH_APERTURE));
+  Mat const strel_contrast = cv::getStructuringElement(strel_shape, Size(CONTRAST_MORPH_APERTURE, CONTRAST_MORPH_APERTURE));
+  
+  Mat background;
+  
+  cv::morphologyEx(src, background, cv::MORPH_CLOSE, strel_bg);
+  save_result("background_" + strel_name + ".png", src, background);
 
-    cv::erode(src, dst, strel);
-    save_result("morph_erode_" + strel_name + ".png", src, dst);
+  Mat foreground = cv::Scalar(255) - (background - src);
+  save_result("foreground_" + strel_name + ".png", src, foreground);
 
-    cv::morphologyEx(src, dst, cv::MORPH_OPEN, strel);
-    save_result("morph_open_" + strel_name + ".png", src, dst);
+  // autocontrast
 
-    cv::morphologyEx(src, dst, cv::MORPH_CLOSE, strel);
-    save_result("morph_close_" + strel_name + ".png", src, dst);
+  Mat fg_min;
+  cv::erode(foreground, fg_min, strel_contrast);
+  save_result("fg_min_" + strel_name + ".png", src, fg_min);
 
-    cv::morphologyEx(src, dst, cv::MORPH_GRADIENT, strel);
-    save_result("morph_grad_" + strel_name + ".png", src, dst);
+  Mat fg_max;
+  cv::dilate(foreground, fg_max, strel_contrast);
+  save_result("fg_max_" + strel_name + ".png", src, fg_max);
 
-    cv::morphologyEx(src, dst, cv::MORPH_TOPHAT, strel);
-    save_result("morph_tophat_" + strel_name + ".png", src, dst);
+  Mat numerator_f;
+  Mat(foreground - fg_min).convertTo(numerator_f, CV_32F);
+  
+  Mat denominator_f;
+  Mat(fg_max - fg_min).convertTo(denominator_f, CV_32F);
 
-    cv::morphologyEx(src, dst, cv::MORPH_BLACKHAT, strel);
-    save_result("morph_blackhat_" + strel_name + ".png", src, dst);
+  Mat fg_contrast_f = numerator_f / denominator_f;
+
+  Mat fg_contrast;
+  fg_contrast_f.convertTo(fg_contrast, CV_8U, 255, 0);
+
+  save_result("fg_contrast_" + strel_name + ".png", src, fg_contrast);
+
+
+  return;
+
+  Mat dst;
+  cv::dilate(src, dst, strel_bg);
+  save_result("morph_dilate_" + strel_name + ".png", src, dst);
+
+  cv::erode(src, dst, strel_bg);
+  save_result("morph_erode_" + strel_name + ".png", src, dst);
+
+  cv::morphologyEx(src, dst, cv::MORPH_OPEN, strel_bg);
+  save_result("morph_open_" + strel_name + ".png", src, dst);
+
+
+  cv::morphologyEx(src, dst, cv::MORPH_GRADIENT, strel_bg);
+  save_result("morph_grad_" + strel_name + ".png", src, dst);
+
+  cv::morphologyEx(src, dst, cv::MORPH_TOPHAT, strel_bg);
+  save_result("morph_tophat_" + strel_name + ".png", src, dst);
+
+  cv::morphologyEx(src, dst, cv::MORPH_BLACKHAT, strel_bg);
+  save_result("morph_blackhat_" + strel_name + ".png", src, dst);
+}
+
+static void skeletonize(Mat const& src)
+{
+  Mat const strel = cv::getStructuringElement(cv::MORPH_ELLIPSE, Size(3, 3));
+
+  Mat orig = 255 - src.clone();
+  Mat eroded = 255 - src.clone();
+  Mat curr;
+  Mat skeleton = Mat::zeros(src.size(), CV_8UC1);
+
+  int n = 200;
+  while (true)
+  {
+    cv::erode(eroded, eroded, strel); // contraction step
+    cv::dilate(eroded, curr, strel);
+    // save_result("er.png", curr, eroded);
+    // save_result("er.png", curr, orig - curr);
+    Mat delta = orig - curr;
+    skeleton += delta;
+    if (cv::countNonZero(delta) == 0)
+    {
+      printf("Sk finished\n");
+      break;
+    }
+    // save_result("sk.png", src, skeleton);
+    cv::imshow("sk", hstack(src, 255 - skeleton));
+    eroded.copyTo(orig);
+
+    if ((cv::waitKey(50) & 0xFF) == 'q')
+      return;
+  }
+  cv::waitKey(0);
 }
 
 static void save_filtered_images(Mat const& src)
 {
-    save_result("src.png", src, src);
+  skeletonize(src);
+  skeletonize(255 - src);
+  return;
 
-    { // such blocks '{}' are to ensure deallocation of filtered images to preserve memory
-      // and also to enable reuse of the name 'dst'
-        Mat dst;
-        cv::blur(src, dst, Size(BLUR_APERTURE, BLUR_APERTURE));
-        save_result("box.png", src, dst);
-    }
+  // save_result("src.png", src, src);
 
-    {
-        Mat dst;
-        cv::medianBlur(src, dst, BLUR_APERTURE);
-        save_result("median.png", src, dst);
-    }
+  { // such blocks '{}' are to ensure deallocation of filtered images to preserve memory
+    // and also to enable reuse of the name 'dst'
 
-    {
-        Mat dst;
-        cv::GaussianBlur(src, dst, Size(BLUR_APERTURE, BLUR_APERTURE), 0);
-        save_result("gauss.png", src, dst);
-    }
 
-    save_morph_images(src, cv::MORPH_RECT, "box");
-    save_morph_images(src, cv::MORPH_ELLIPSE, "circle");
-    save_morph_images(src, cv::MORPH_CROSS, "cross");
+    Mat src_f;
+    src.convertTo(src_f, CV_32F, 1.0 / 255);
+    Mat mean;
+    cv::blur(src_f, mean, Size(BLUR_APERTURE, BLUR_APERTURE));
+    
+    Mat src_sqr_f = src_f * src_f;
+    
+    Mat mean_sqr_f;
+    cv::blur(src_sqr_f, mean_sqr_f, Size(BLUR_APERTURE, BLUR_APERTURE));
 
-    {
-        Mat dst;
-        cv::bilateralFilter(src, dst, BLUR_APERTURE, BLUR_BILATERAL_SIGMA, BLUR_BILATERAL_SIGMA);
-        save_result("bilateral.png", src, dst);
-    }
+    Mat sd_sqr_f = mean_sqr_f - mean * mean;
+    Mat sd_f;
+    cv::sqrt(sd_sqr_f, sd_f);
+    
+    Mat threshold_f = mean + (-0.1) * sd_f;
 
-    {
-        Mat smooth;
-        cv::GaussianBlur(src, smooth, Size(BLUR_APERTURE, BLUR_APERTURE), 0);
-        
-        Mat dst;
-        cv::Canny(smooth, dst, 20, 80);
-        save_result("canny.png", src, dst);
-    }
+    Mat binarized = Mat::zeros(src.size(), CV_8UC1);
+    Mat binarized_fg = Mat::ones(src.size(), CV_8UC1) * 255;
+    
+    binarized_fg.copyTo(binarized, src_f > threshold_f);
+    save_result("binarized.png", src, binarized);
+  }
+
+  if (false)
+  {
+    Mat dst;
+    cv::medianBlur(src, dst, BLUR_APERTURE);
+    save_result("median.png", src, dst);
+  }
+
+  if (false)
+  {
+    Mat dst;
+    cv::GaussianBlur(src, dst, Size(BLUR_APERTURE, BLUR_APERTURE), 0);
+    save_result("gauss.png", src, dst);
+  }
+
+  save_morph_images(src, cv::MORPH_RECT, "box");
+
+  if (false)
+  {
+    Mat dst;
+    cv::bilateralFilter(src, dst, BLUR_APERTURE, BLUR_BILATERAL_SIGMA, BLUR_BILATERAL_SIGMA);
+    save_result("bilateral.png", src, dst);
+  }
+
+  if (false)
+  {
+    Mat smooth;
+    cv::GaussianBlur(src, smooth, Size(BLUR_APERTURE, BLUR_APERTURE), 0);
+    
+    Mat dst;
+    cv::Canny(smooth, dst, 20, 80);
+    save_result("canny.png", src, dst);
+  }
 }
 
 
 int main(int argc, char const** argv)
 {
-    try
-    {
-        if (argc != 2)
-            throw std::runtime_error("Bad usage: must have input image as sole arg");
-        std::string const input_image_path = argv[1];
-        Mat const input_image = cv::imread(input_image_path, CV_LOAD_IMAGE_GRAYSCALE);
+  try
+  {
+    if (argc != 2)
+      throw std::runtime_error("Bad usage: must have input image as sole arg");
+    std::string const input_image_path = argv[1];
+    Mat const input_image = cv::imread(input_image_path, CV_LOAD_IMAGE_GRAYSCALE);
 
-        save_filtered_images(input_image);
+    save_filtered_images(input_image);
 
-        return 0;
-    }
-    catch (std::exception const& e)
-    {
-        fprintf(stderr, "Exception: %s\n", e.what());
-        return 1;
-    }
+    return 0;
+  }
+  catch (std::exception const& e)
+  {
+    fprintf(stderr, "Exception: %s\n", e.what());
+    return 1;
+  }
 }
