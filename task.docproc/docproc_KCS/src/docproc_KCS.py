@@ -31,7 +31,7 @@ def find_vert_direction(src):
         filtered = cv2.morphologyEx(rotated, cv2.MORPH_DILATE, strel)
         filtered = rotate_img(filtered, (cols/2, rows/2), -angle)
 
-        mean = np.mean(filtered[cols/2-250:cols/2+250, rows/2-250:rows/2+250])
+        mean = np.mean(filtered[cols/4:cols*3/4, rows/4:rows*3/4])
 
         if mean < min_mean:
             min_mean = mean

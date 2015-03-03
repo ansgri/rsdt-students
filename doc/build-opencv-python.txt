@@ -1,0 +1,4 @@
+cmake .. -DBUILD_EXAMPLES=YES -DCMAKE_INSTALL_PREFIX=$(pwd)/VENV/local -DCMAKE_BUILD_TYPE=Release -DWITH_EIGEN=YES -DWITH_VTK=YES -DWITH_OPENMP=YES -DPYTHON_PACKAGES_PATH=$(pwd)/VENV/local/lib/python2.7/site-packages
+
+Здесь $(pwd)/VENV -- путь к virtualenv
+Собирать нужно с активированной virtualenv (source VENV/bin/activate)
