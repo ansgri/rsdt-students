@@ -37,9 +37,9 @@ void xor_test()
     const unsigned int num_input = 2;
     const unsigned int num_hidden = 3;
     const unsigned int num_output = 1;
-    const float desired_error = 0.00001f;
+    const float desired_error = 0.001f;
     const unsigned int max_iterations = 300000;
-    const unsigned int iterations_between_reports = 1000;
+    const unsigned int iterations_between_reports = 10000;
 
     cout << endl << "Creating network." << endl;
 
@@ -48,14 +48,14 @@ void xor_test()
 
     net.set_learning_rate(learning_rate);
 
-    //net.set_activation_steepness_hidden(0.5);
-    //net.set_activation_steepness_output(0.5);
+    net.set_activation_steepness_hidden(0.5);
+    net.set_activation_steepness_output(0.5);
 
     net.set_activation_function_hidden(FANN::SIGMOID_SYMMETRIC_STEPWISE);
     net.set_activation_function_output(FANN::SIGMOID_SYMMETRIC_STEPWISE);
 
     // Set additional properties such as the training algorithm
-    //net.set_training_algorithm(FANN::TRAIN_QUICKPROP);
+    net.set_training_algorithm(FANN::TRAIN_QUICKPROP);
 
     // Output network type and parameters
     cout << endl << "Network Type                             :  ";
