@@ -1,148 +1,83 @@
-// from http://stackoverflow.com/questions/23325197/fann-examples-give-wrong-results-although-training-seems-successful
+#include <floatfann.h>
+#include <fann_cpp.h>
+#include <cstdio>
 
-#include "floatfann.h"
-#include "fann_cpp.h"
-
-#include <ios>
-#include <iostream>
-#include <iomanip>
-#include <string>
-using std::cout;
-using std::cerr;
-using std::endl;
-using std::setw;
-using std::left;
-using std::right;
-using std::showpos;
-using std::noshowpos;
-
-
-// Callback function that simply prints the information to cout
 int print_callback(FANN::neural_net &net, FANN::training_data &train,
     unsigned int max_epochs, unsigned int epochs_between_reports,
     float desired_error, unsigned int epochs, void *user_data)
 {
-    cout << "Epochs     " << setw(8) << epochs << ". "
-         << "Current Error: " << left << net.get_MSE() << right << endl;
+    printf("N: %d  epochs: %6d  err: %1.5f\n",
+           net.get_total_neurons(),
+           epochs,
+           net.get_MSE());
     return 0;
 }
 
 // Test function that demonstrates usage of the fann C++ wrapper
 void xor_test()
 {
-    cout << endl << "XOR test started." << endl;
-
-    const float learning_rate = 0.7f;
-    const unsigned int num_layers = 3;
-    const unsigned int num_input = 2;
-    const unsigned int num_hidden = 3;
-    const unsigned int num_output = 1;
-    const float desired_error = 0.001f;
-    const unsigned int max_iterations = 300000;
-    const unsigned int iterations_between_reports = 10000;
-
-    cout << endl << "Creating network." << endl;
-
     FANN::neural_net net;
-    net.create_standard(num_layers, num_input, num_hidden, num_output);
+    net.create_standard(3,  // num_layers
+                        2,  // num_input
+                        3,  // num_hidden
+                        1); // num_output
 
-    net.set_learning_rate(learning_rate);
-
-    net.set_activation_steepness_hidden(0.5);
-    net.set_activation_steepness_output(0.5);
+    net.set_learning_rate(0.7f);
 
     net.set_activation_function_hidden(FANN::SIGMOID_SYMMETRIC_STEPWISE);
-    net.set_activation_function_output(FANN::SIGMOID_SYMMETRIC_STEPWISE);
+    net.set_activation_steepness_hidden(1.0);
 
-    // Set additional properties such as the training algorithm
+    net.set_activation_function_output(FANN::SIGMOID_SYMMETRIC_STEPWISE);
+    net.set_activation_steepness_output(1.0);
+
     net.set_training_algorithm(FANN::TRAIN_QUICKPROP);
 
-    // Output network type and parameters
-    cout << endl << "Network Type                             :  ";
-    switch (net.get_network_type())
-    {
-    case FANN::LAYER:
-        cout << "LAYER" << endl;
-        break;
-    case FANN::SHORTCUT:
-        cout << "SHORTCUT" << endl;
-        break;
-    default:
-        cout << "UNKNOWN" << endl;
-        break;
-    }
-    net.print_parameters();
-
-    cout << endl << "Training network." << endl;
+    // net.print_parameters();
 
     FANN::training_data data;
     if (data.read_train_from_file("../testdata/fann_xor.data"))
     {
-        // ***** MY INPUT
-        std::string fn;
-        fn = "xor_read.data";
-        data.save_train(fn);
-        fann_type **train_dat;
-        fann_type **out_dat;
-        train_dat = data.get_input();
-        out_dat = data.get_output();
-
-        printf("*****************\n");
-        printf("Printing read data (%d):\n", data.num_input_train_data());
-        for(unsigned int i = 0; i < data.num_input_train_data(); i++)
-        {
-            printf("XOR test (%f,%f) -> %f\n", train_dat[i][0], train_dat[i][1], out_dat[i][0]);
-        }
-        printf("*****************\n");
-
-        // END: MY INPUT **************
-
-        // Initialize and train the network with the data
+        // Training
         net.init_weights(data);
+        // net.randomize_weights(-1, 1);
 
-        cout << "Max Epochs " << setw(8) << max_iterations << ". "
-            << "Desired Error: " << left << desired_error << right << endl;
         net.set_callback(print_callback, NULL);
-        net.train_on_data(data, max_iterations,
-            iterations_between_reports, desired_error);
 
-        cout << endl << "Testing network." << endl;
+        float const desired_error = 0.001f;
+        unsigned const max_iterations = 300000;
+        unsigned const iterations_between_reports = 10000;
+        net.train_on_data(data, 
+                          max_iterations,
+                          iterations_between_reports,
+                          desired_error);
 
         for (unsigned int i = 0; i < data.length_train_data(); ++i)
         {
             // Run the network on the test data
             fann_type *calc_out = net.run(data.get_input()[i]);
 
-            cout << "XOR test (" << showpos << data.get_input()[i][0] << ", " 
-                 << data.get_input()[i][2] << ") -> " << *calc_out
-                 << ", should be " << data.get_output()[i][0] << ", "
-                 << "difference = " << noshowpos
-                 << fann_abs(*calc_out - data.get_output()[i][0]) << endl;
+            printf("(%.1f, %.1f) -> %.1f  =  %.4f  ~  %.4f\n",
+                   data.get_input()[i][0], 
+                   data.get_input()[i][1], 
+                   data.get_output()[i][0], 
+                   *calc_out,
+                   fann_abs(*calc_out - data.get_output()[i][0]));
         }
 
-        cout << endl << "Saving network." << endl;
-
-        // Save the network in floating point and fixed point
         net.save("xor_float.net");
-        unsigned int decimal_point = net.save_to_fixed("xor_fixed.net");
-        data.save_train_to_fixed("xor_fixed.data", decimal_point);
-
-        cout << endl << "XOR test completed." << endl;
     }
 }
 
-/* Startup function. Syncronizes C and C++ output, calls the test function
-   and reports any exceptions */
 int main(int argc, char **argv)
 {
     try
     {
-        std::ios::sync_with_stdio(); // Syncronize cout and printf output
         xor_test();
+        return 0;
     }
-    catch (...)
+    catch (std::exception const& e)
     {
-        cerr << endl << "Abnormal exception." << endl;
+        fprintf(stderr, "Exception: %s\n", e.what());
+        return 1;
     }
-    return 0;
 }
