@@ -3,6 +3,7 @@
 #include <cstdio>
 #include <stdexcept>
 #include <string>
+#include <boost/lexical_cast.hpp>
 
 
 static int print_callback(FANN::neural_net &net, FANN::training_data &train,
@@ -13,6 +14,7 @@ static int print_callback(FANN::neural_net &net, FANN::training_data &train,
          net.get_total_neurons(),
          epochs,
          net.get_MSE());
+  net.save("_digits_float." + boost::lexical_cast<std::string>(getpid()) + ".fann");
   return 0;
 }
 
@@ -38,7 +40,7 @@ static void init_nn(FANN::neural_net & net)
   net.set_cascade_output_change_fraction(0.001);
 }
 
-static void test_nn(FANN::neural_net & net, 
+static void test_nn(FANN::neural_net & net,
                     FANN::training_data & data)
 {
   for (unsigned i = 0; i < data.length_train_data(); ++i)
@@ -47,15 +49,15 @@ static void test_nn(FANN::neural_net & net,
     fann_type *calc_out = net.run(data.get_input()[i]);
 
     printf("(%.1f, %.1f) -> %.1f  =  %.4f  ~  %.4f\n",
-           data.get_input()[i][0], 
-           data.get_input()[i][1], 
-           data.get_output()[i][0], 
+           data.get_input()[i][0],
+           data.get_input()[i][1],
+           data.get_output()[i][0],
            *calc_out,
            fann_abs(*calc_out - data.get_output()[i][0]));
   }
 }
 
-static void xor_test()
+static void run_nn()
 {
   FANN::neural_net net;
   init_nn(net);
@@ -66,7 +68,7 @@ static void xor_test()
   std::string dataset_filename = "../testdata/digits.data";
   if (!data.read_train_from_file(dataset_filename))
     throw std::runtime_error("Cannot read data from " + dataset_filename);
-  
+
   // Training
   net.init_weights(data);
   // net.randomize_weights(-1, 1);
@@ -76,22 +78,22 @@ static void xor_test()
   float const desired_error = 0.0001f;
   unsigned const max_iterations = 300000;
   unsigned const iterations_between_reports = 10;
-  net.cascadetrain_on_data(data, 
-                    100,
+  net.cascadetrain_on_data(data,
+                    500,
                     // max_iterations,
                     1,
                     // iterations_between_reports,
                     desired_error);
 
   // test_nn(net, data);
-  net.save("xor_float.net");
 }
 
 int main(int argc, char **argv)
 {
   try
   {
-    xor_test();
+    run_nn
+  ();
     return 0;
   }
   catch (std::exception const& e)
