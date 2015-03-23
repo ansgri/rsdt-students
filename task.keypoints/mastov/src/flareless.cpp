@@ -6,6 +6,34 @@
 
 #include <vector>
 
+
+/**************** DISCUSSION ***************
+
+  The solution definitely works and includes an added step
+  for good picture selection, though the engineering part
+  is far from perfect.
+
+  1. Please use proper filesystem library to improve the UI
+     (boost::filesystem is recommended though Qt is also OK):
+    1.1. no need for the 'n' argument and fixed filename format,
+         just list the directory contents using [0]
+           [0] http://www.boost.org/doc/libs/1_39_0/libs/filesystem/doc/reference.html#Class-template-basic_directory_iterator
+    1.2. fix the path join operation (dir + filename), current
+         implementation gives bad results if out dir does not end
+         with '/' (can also be fixed with boost::filesystem)
+  2. you can select 'good' images by imshow()ing then and asking 'is it ok?'
+     for each one with waitKey() and thus get rid of output dir;
+     though the dir might be useful for debug purposes.
+  3. method selection should probably be an option.
+     look into argtable2 (included in this repo) or boost::program_options.
+  3. See minor 'FIXME:' comments concerning style.
+
+********************************************/
+
+
+
+// FIXME: wildcard imports are bad because of possible name collision;
+//        use 'using std::string' etc. instead.
 using namespace std;
 using namespace cv;
 
@@ -29,11 +57,13 @@ int main( int argc, char** argv )
   SiftFeatureDetector detector(0, 4, 0.04, 10, 1.6);
   SiftDescriptorExtractor extractor(3.0);
 
+  // FIXME: ns std:: was in 'using ns' section
   std::vector<KeyPoint> keypoints_object;
   detector.detect(img_object, keypoints_object); //detecting keypoints in obj
 
   Mat descriptors_object;
   extractor.compute(img_object, keypoints_object, descriptors_object); //descripting them
+                                                                       // FIXME: redundant comment
 
   if (descriptors_object.empty())
   {
@@ -50,10 +80,13 @@ int main( int argc, char** argv )
     Mat img_scene_color = imread(scene_folder_name+to_string(j)+".jpg");
 
     detector.detect(img_scene, keypoints_scene); //detecting keypoints in scene
+                                                 // FIXME: redundant comment
     extractor.compute(img_scene, keypoints_scene, descriptors_scene);
 
     if (descriptors_scene.empty())
     {
+      // FIXME: why commented out? the program crashes in this condition
+      //        and reasons for crash should be clear
      // cvError(0,"MatchFinder","2nd descriptor empty",__FILE__,__LINE__);
     }
 
@@ -90,6 +123,7 @@ int main( int argc, char** argv )
 
     Mat H = findHomography( obj, scene, CV_RANSAC );
 
+    // FIXME: explain reason for commenting out instead of deleting; or delete.
     /*
     std::vector<Point2f> obj_corners(4);
     obj_corners[0] = cvPoint(0,0);
@@ -115,11 +149,13 @@ int main( int argc, char** argv )
   int temp=-1;
   while (temp != 0)
   {
+      // FIXME: what if user enters an invalid string or number?
       cin >> temp;
       //cout << "   " << temp << "\n";
       good_results.push_back(temp);
   }
 
+  // FIXME: one operator per line; fix spacing
   if (good_results.size()==0) return 0;
 
   n = good_results.size()-1;
@@ -150,6 +186,10 @@ int main( int argc, char** argv )
         pixel_B[img_numb]= (int)(scanline[j+2]);
       }
 
+      // FIXME: indentation
+      // FIXME: C-style casts (uchar) are bad because they're too nonspecific
+      //        use static_cast<uchar>(...) instead
+
         /*
         // MEDIAN
         nth_element(pixel_R.begin(), pixel_R.begin()+n/2, pixel_R.end());
@@ -173,7 +213,9 @@ int main( int argc, char** argv )
         */
     }
   }
+  // FIXME: output file name should be specified on the command line
   imwrite(output_folder+"flareless.jpg", flareless);
 
+  // FIXME: what for? has no effect without imshow().
   waitKey(0);
 }
