@@ -5,6 +5,43 @@ from scipy import ndimage
 import argparse
 from os import listdir
 from os.path import isfile, join
+from matplotlib import pyplot as plt
+
+
+def drawMatches(img1, kp1, img2, kp2, matches):
+	"""
+	My own implementation of cv2.drawMatches as OpenCV 2.4.9
+	does not have this function available but it's supported in
+	OpenCV 3.0.0
+
+	This function takes in two images with their associated
+	keypoints, as well as a list of DMatch data structure (matches)
+	that contains which keypoints matched in which images.
+
+	An image will be produced where a montage is shown with
+	the first image followed by the second image beside it.
+
+	Keypoints are delineated with circles, while lines are connected
+	between matching keypoints.
+
+	img1,img2 - Grayscale images
+	kp1,kp2 - Detected list of keypoints through any of the OpenCV keypoint
+			  detection algorithms
+	matches - A list of matches of corresponding keypoints through any
+			  OpenCV keypoint matching algorithm
+	"""
+
+	# Create a new output image that concatenates the two images together
+	# (a.k.a) a montage
+	rows1, cols1 = img1.shape
+	rows2, cols2 = img2.shape
+
+	out = np.zeros((max([rows1, rows2]), cols1 + cols2, 3), dtype='uint8')
+
+	# Place the first image to the left
+	out[:rows1, :cols1, :] = np.dstack([img1, img1, img1])
+
+	cv2.imwrite("result.jpg", out)
 
 
 def readDir(args):
@@ -40,44 +77,79 @@ def pano(images):
 		print len(kp)
 		key_points.append(kp)
 		img_des.append(d)
-	distances = [[[[None for m in range(len(img_des[j]))] for n in range(
-		len(img_des[j]))] for j in range(len(img_des))] for i in range(len(img_des))]
-	means = [[None for j in range(len(img_des))] for i in range(len(img_des))]
-	same_points = [[[]
-					for j in range(len(img_des))] for i in range(len(img_des))]
-	# print img_des
 
-	for i in range(len(img_des)):
-		for j in range(len(img_des)):
-			if i < j:
-				mean = 0
-				for n in range(len(img_des[i])):
-					for m in range(len(img_des[j])):
-						dist = np.linalg.norm(img_des[i][n] - img_des[j][m])
-						mean = mean + dist
-						distances[i][j][n][m] = dist
-				means[i][j] = mean / (len(img_des[i]) * len(img_des[j]))
-				print means[i][j]
+	bf = cv2.BFMatcher()
+	obj = None
+	scene = images[0]
+	matches = [[[] for i in range(len(images))] for j in range(len(images))]
+	good = [[[] for i in range(len(images))] for j in range(len(images))]
 
-	for i in range(len(img_des)):
-		for j in range(len(img_des)):
-			if i < j:
-				for n in range(len(img_des[i])):
-					for m in range(len(img_des[j])):
-						if distances[i][j][n][m] < 50:
-							same_points[i][j].append([n, m])
+	# for i in range(len(images)):
+	# 	for j in range(len(images)):
+	# 		if i == j:
+	# 			continue
+	# 		matches[i][j] = bf.knnMatch(img_des[i], img_des[j], k=2)
+	# 		print "Found matches for " + str(i) + " and " + str(j)
+	# 		# Apply ratio test
+	# 		for m, n in matches[i][j]:
+	# 			if m.distance < 0.7 * n.distance:
+	# 				good[i][j].append(m)
+	# 		print len(good[i][j])
 
-	for i in range(len(img_des)):
-		for j in range(len(img_des)):
-			if i < j:
-				print same_points[i][j]
-				images[i] = cv2.drawKeypoints(images[i], [key_points[i][k] for  k in [
-											  same_points[i][j][q][0] for q in range(len(same_points[i][j]))]])
-				images[j] = cv2.drawKeypoints(images[j], [key_points[j][k] for  k in [
-											  same_points[i][j][q][1] for q in range(len(same_points[i][j]))]])
+	# sum_len = [None for i in range(len(images))]
+	# for i in range(len(images)):
+	# 	sum_len[i] = sum([len(good[i][j]) for j in range(len(images))])
+	# 	print sum_len[i]
+	# max_index = 0
+	# for i in range(len(images)):
+	# 	if sum_len[max_index] < sum_len[i]:
+	# 		max_index = i
+	# scene = images[max_index]
+	# print max_index
+
+	max_index = 1
+	scene = images[max_index]
 	for i in range(len(images)):
-		# cv2.imshow("image " + str(i), images[i])
-		cv2.imwrite("image" + str(i) + ".jpg", images[i])
+		if i == max_index:
+			continue
+
+		matches[i][max_index] = bf.knnMatch(img_des[i], img_des[max_index], k=2)
+		print "Found matches for " + str(i) + " and " + str(j)
+		# Apply ratio test
+		for m, n in matches[i][max_index]:
+			if m.distance < 0.7 * n.distance:
+				good[i][max_index].append(m)
+
+		obj = images[i]
+		obj_pts = np.float32(
+			[key_points[i][m.queryIdx].pt for m in good[i][max_index]]).reshape(-1, 1, 2)
+		scene_pts = np.float32(
+			[key_points[max_index][m.trainIdx].pt for m in good[i][max_index]]).reshape(-1, 1, 2)
+
+		# print len(obj_pts)
+		# print len(scene_pts)
+		M, mask = cv2.findHomography(scene_pts, obj_pts, cv2.RANSAC, 5.0)
+		matchesMask = mask.ravel().tolist()
+		# print M
+		# h,w = images[0].shape
+		# pts = np.float32([ [0,0],[0,h-1],[w-1,h-1],[w-1,0] ]).reshape(-1,1,2)
+		# dst = cv2.perspectiveTransform(pts, M)
+		# print dst
+		# np.linalg.inv
+		rows, cols = scene.shape
+		mult = 1
+		result = cv2.warpPerspective(obj, np.linalg.inv(M), (cols*(mult+1), rows*(mult+1)))
+		
+		top = int(0*rows)
+		bottom = int(mult*rows)
+		left = int(0*cols)
+		right = int(mult*cols)
+		tmp = cv2.copyMakeBorder(scene, top, bottom, left, right, cv2.BORDER_CONSTANT, 0) 
+		print result.shape
+		print tmp.shape
+		cv2.imwrite("transformed" + str(i) + ".jpg", result)
+		result += tmp
+		cv2.imwrite("result" + str(i) + ".jpg", result)
 
 
 parser = createParser()
