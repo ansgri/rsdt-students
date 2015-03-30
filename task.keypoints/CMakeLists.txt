@@ -1,2 +1,2 @@
 add_subdirectory(mastov)
-
+add_subdirectory(pashevich)
