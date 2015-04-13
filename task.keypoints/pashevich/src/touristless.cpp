@@ -3,6 +3,7 @@
 #include "opencv2/opencv.hpp"
 #include "opencv2/nonfree/features2d.hpp"
 #include <vector>
+#include <utility>
 
 using namespace std;
 using namespace cv;
@@ -44,7 +45,7 @@ vector<vector<pair<Point2i, Point2i> > > readTouristLocations(string sourceFileN
     for (int j = 0; j < numberOfRects; ++j) {
       int x1, x2, y1, y2;
       toursitLocationsFile >> x1 >> y1 >> x2 >> y2;
-      curLocations.push_back(make_pair<Point2i, Point2i>(Point2i(x1 * 4, y1 * 4), Point2i(x2 * 4, y2 * 4)));
+      curLocations.push_back(make_pair(Point2i(x1 * 4, y1 * 4), Point2i(x2 * 4, y2 * 4)));
     }
     toursitLocations.push_back(curLocations);
   }
@@ -73,7 +74,7 @@ vector<pair<Point2i, Point2i> > transformTouristLocations(vector<pair<Point2i, P
       if (pLR.x < static_cast<int>(outputPoints[k].x)) pLR.x = static_cast<int>(outputPoints[k].x);
       if (pLR.y < static_cast<int>(outputPoints[k].y)) pLR.y = static_cast<int>(outputPoints[k].y);
     }
-    newLocations.push_back(make_pair<Point2i, Point2i>(pUL, pLR));
+    newLocations.push_back(make_pair(pUL, pLR));
   }
   // printVect("newLocations", newLocations);
   return newLocations;
@@ -193,7 +194,7 @@ int touristlessization(string inputFolderName, int n, int objectId, string outpu
       } else {
         ++curimg;
       }
-      
+
     }
     if (!imgFound) {
       cout << "Can not found image to replace tourists number " << i << endl;
