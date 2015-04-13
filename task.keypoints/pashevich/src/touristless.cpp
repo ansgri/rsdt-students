@@ -215,7 +215,7 @@ int touristlessization(string inputFolderName, int n, int objectId, string outpu
 }
 
 int main(int argc, char* argv[]) {
-  if (argc < 4 && argc > 5) {
+  if (argc < 4 || argc > 5) {
     cout << "Usage: path to folder with images, number of images, number of the best photo, [output folder]\n";
     return -1;
   }
