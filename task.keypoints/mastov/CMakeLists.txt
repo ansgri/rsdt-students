@@ -6,4 +6,8 @@ add_executable(flareless
 
 target_link_libraries(flareless
   ${OpenCV_LIBS}
+  boost_system
+  boost_filesystem
+
+  opencv_nonfree
 )

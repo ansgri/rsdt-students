@@ -4,6 +4,12 @@
 #include "opencv2/core/core.hpp"
 #include "opencv2/nonfree/features2d.hpp"
 
+#include "boost/filesystem/operations.hpp"
+#include "boost/filesystem/path.hpp"
+#include "boost/progress.hpp" 
+
+namespace fs = boost::filesystem;
+
 #include <vector>
 
 
@@ -30,68 +36,94 @@
 
 ********************************************/
 
-
-
-// FIXME: wildcard imports are bad because of possible name collision;
-//        use 'using std::string' etc. instead.
-using namespace std;
-using namespace cv;
-
 int main( int argc, char** argv )
 {
 
-  if (argc != 5)
+  fs::path p_images(fs::current_path());
+  fs::path f_model_image(fs::current_path());
+  fs::path p_out(fs::current_path());
+
+  if (argc == 4)
   {
-    cout << "Usage: path to object, path to folder with images, number of images, output folder  \n";
+    f_model_image = fs::system_complete(argv[1]);
+    p_images = fs::system_complete(argv[2]);
+    p_out = fs::system_complete(argv[3]);
+  }
+  else
+  {
+    std::cout << "\nusage: path_to_obj path_to_images output_file" << std::endl;
     return 1;
   }
-  string path_to_obj = argv[1]; // "../testdata/06_ds50/obj.jpg"
-  string scene_folder_name = argv[2]; //"../testdata/06_ds50/images/";
-  int n = stoi(argv[3]); //5;
-  string output_folder = argv[4]; //"../testdata/06_ds50/images/normolized/";
 
-  Mat img_object = imread(path_to_obj, CV_LOAD_IMAGE_GRAYSCALE );
-  //Mat img_scene_color = imread(scene_name);
+  if (!fs::exists(p_images) || !fs::exists(f_model_image) || !fs::exists(p_images) )
+  {
+    std::cout << "\nCheck names. " << std::endl;
+    return 1;
+  }
+  cv::Mat img_object = cv::imread(f_model_image.native(), CV_LOAD_IMAGE_GRAYSCALE );
+  cv::SiftFeatureDetector detector(0, 4, 0.04, 10, 1.6);
+  cv::SiftDescriptorExtractor extractor(3.0);
 
-
-  SiftFeatureDetector detector(0, 4, 0.04, 10, 1.6);
-  SiftDescriptorExtractor extractor(3.0);
-
-  // FIXME: ns std:: was in 'using ns' section
-  std::vector<KeyPoint> keypoints_object;
+  std::vector<cv::KeyPoint> keypoints_object;
   detector.detect(img_object, keypoints_object); //detecting keypoints in obj
 
-  Mat descriptors_object;
-  extractor.compute(img_object, keypoints_object, descriptors_object); //descripting them
-                                                                       // FIXME: redundant comment
-
+  cv::Mat descriptors_object;
+  extractor.compute(img_object, keypoints_object, descriptors_object); 
+                                                                       
   if (descriptors_object.empty())
   {
     cvError(0,"MatchFinder","1st descriptor empty",__FILE__,__LINE__);
   }
 
-  for (int j = 1; j <= n; j++)
+  std::vector<std::string> names;
+  if (fs::is_directory(p_images))
+  {
+    fs::directory_iterator end_iter;
+    for (fs::directory_iterator dir_itr(p_images);
+          dir_itr != end_iter;
+          ++dir_itr)
+    {
+      try
+      {
+        if (fs::is_regular_file(dir_itr->status()))
+        {
+          names.push_back(dir_itr->path().filename().native());
+        }
+      }
+      catch (const std::exception & ex)
+      {
+        std::cout << dir_itr->path().filename() << " " << ex.what() << std::endl;
+      }
+    }
+  }
+  else
+  {
+    std::cout << "path_to_images must be dir.\n";
+    return 1;
+  }
+
+  int n = names.size();
+  std::vector<cv::Mat> images(n);
+
+  for (int j = 0; j < n; j++)
   {
 
-    std::vector<KeyPoint> keypoints_scene;
-    Mat descriptors_scene;
+    std::vector<cv::KeyPoint> keypoints_scene;
+    cv::Mat descriptors_scene;
 
-    Mat img_scene = imread(scene_folder_name+to_string(j)+".jpg", CV_LOAD_IMAGE_GRAYSCALE );
-    Mat img_scene_color = imread(scene_folder_name+to_string(j)+".jpg");
+    cv::Mat img_scene = cv::imread(p_images.native() + names[j], CV_LOAD_IMAGE_GRAYSCALE );
+    cv::Mat img_scene_color = cv::imread(p_images.native()+names[j]);
 
-    detector.detect(img_scene, keypoints_scene); //detecting keypoints in scene
-                                                 // FIXME: redundant comment
+    detector.detect(img_scene, keypoints_scene); 
     extractor.compute(img_scene, keypoints_scene, descriptors_scene);
 
     if (descriptors_scene.empty())
     {
-      // FIXME: why commented out? the program crashes in this condition
-      //        and reasons for crash should be clear
-     // cvError(0,"MatchFinder","2nd descriptor empty",__FILE__,__LINE__);
+      cvError(0,"MatchFinder","2nd descriptor empty",__FILE__,__LINE__);
     }
 
-    FlannBasedMatcher matcher;
-    vector<DMatch> matches;
+    cv::FlannBasedMatcher matcher;
+    std::vector<cv::DMatch> matches;
     matcher.match(descriptors_object, descriptors_scene, matches);
 
     double max_dist = 0; double min_dist = 100;
@@ -103,7 +135,7 @@ int main( int argc, char** argv )
       if( dist > max_dist ) max_dist = dist;
     }
 
-    vector< DMatch > good_matches;
+    std::vector< cv::DMatch > good_matches;
     for( int i = 0; i < descriptors_object.rows; i++ )
     {
       if( matches[i].distance < 3*min_dist )
@@ -112,110 +144,65 @@ int main( int argc, char** argv )
       }
     }
 
-    //Mat img_matches;
-    vector<Point2f> obj;
-    vector<Point2f> scene;
+    std::vector<cv::Point2f> obj;
+    std::vector<cv::Point2f> scene;
     for( int i = 0; i < good_matches.size(); i++ )
     {
       obj.push_back( keypoints_object[ good_matches[i].queryIdx ].pt );
       scene.push_back( keypoints_scene[ good_matches[i].trainIdx ].pt );
     }
 
-    Mat H = findHomography( obj, scene, CV_RANSAC );
+    cv::Mat H = cv::findHomography( obj, scene, CV_RANSAC );
 
-    // FIXME: explain reason for commenting out instead of deleting; or delete.
-    /*
-    std::vector<Point2f> obj_corners(4);
-    obj_corners[0] = cvPoint(0,0);
-    obj_corners[1] = cvPoint(img_object.cols, 0);
-    obj_corners[2] = cvPoint( img_object.cols, img_object.rows );
-    obj_corners[3] = cvPoint(0, img_object.rows);
-
-    std::vector<Point2f> scene_corners(4);
-
-    perspectiveTransform( obj_corners, scene_corners, H);
-    line( img_scene, scene_corners[0], scene_corners[1], Scalar(0, 255, 0), 4 );
-    line( img_scene, scene_corners[1], scene_corners[2], Scalar( 0, 255, 0), 4 );
-    line( img_scene, scene_corners[2], scene_corners[3], Scalar( 0, 255, 0), 4 );
-    line( img_scene, scene_corners[3], scene_corners[0], Scalar( 0, 255, 0), 4 );
-    */
-    warpPerspective(img_scene_color, img_scene_color, H.inv(), img_object.size());
-    cout << "Writing image number " << j << " ...";
-    imwrite(output_folder+to_string(j)+".jpg", img_scene_color);
-    cout << "done\n";
+    cv::warpPerspective(img_scene_color, img_scene_color, H.inv(), img_object.size());
+    std::cout << "Writing image number " << j << " ...";
+    img_scene_color.copyTo(images[j]);
+    std::cout << "done\n";
   }
-  cout << "Look in a destination folder: " << output_folder << ".\nInput numbers of GOOD results below separated by ENTER ('0' in the end)\n";
-  vector<int> good_results;
-  int temp=-1;
-  while (temp != 0)
-  {
-      // FIXME: what if user enters an invalid string or number?
-      cin >> temp;
-      //cout << "   " << temp << "\n";
-      good_results.push_back(temp);
-  }
-
-  // FIXME: one operator per line; fix spacing
-  if (good_results.size()==0) return 0;
-
-  n = good_results.size()-1;
-  vector<Mat> images(n);
+  std::cout << "Input 1 or 0 if image is good or bad and press ENTER\n";
+  std::vector<int> good_results;
+  bool is_good;
 
   for (int i = 0; i < n; i++)
   {
-    images[i] = imread(output_folder+to_string(good_results[i])+".jpg",1);
+    cv::imshow("Image", images[i]);
+    cv::waitKey(0);
+    std::cin >> is_good;
+    if(is_good)
+      good_results.push_back(i);
   }
 
-  vector<int> pixel_R(n);
-  vector<int> pixel_G(n);
-  vector<int> pixel_B(n);
+  if (good_results.size() == 0) 
+    return 0;
 
-  Mat flareless(images[0].rows,images[0].cols, CV_8UC3, Scalar::all(0));
+  n = good_results.size();
+ 
+  std::vector<int> pixel_R(n);
+  std::vector<int> pixel_G(n);
+  std::vector<int> pixel_B(n);
+
+  int img_numb;
+
+  cv::Mat flareless(images[0].rows, images[0].cols, CV_8UC3, cv::Scalar::all(0));
 
   for (int i = 0; i < images[0].rows; i++)
   {
     for (int j = 0; j < 3*images[0].cols; j+=3)
     {
-      for (int img_numb = 0; img_numb < n; img_numb++)
+      for (int k = 0; k < n; k++)
       {
-
+        img_numb = good_results[k];
         uchar* scanline = images[img_numb].ptr<uchar>(i);
 
-        pixel_R[img_numb]= (int)(scanline[j]);
-        pixel_G[img_numb]= (int)(scanline[j+1]);
-        pixel_B[img_numb]= (int)(scanline[j+2]);
+        pixel_R[k]= static_cast<uchar>(scanline[j]);
+        pixel_G[k]= static_cast<uchar>(scanline[j+1]);
+        pixel_B[k]= static_cast<uchar>(scanline[j+2]);
       }
-
-      // FIXME: indentation
-      // FIXME: C-style casts (uchar) are bad because they're too nonspecific
-      //        use static_cast<uchar>(...) instead
-
-        /*
-        // MEDIAN
-        nth_element(pixel_R.begin(), pixel_R.begin()+n/2, pixel_R.end());
-        nth_element(pixel_G.begin(), pixel_G.begin()+n/2, pixel_G.end());
-        nth_element(pixel_B.begin(), pixel_B.begin()+n/2, pixel_B.end());
-        flareless.ptr<uchar>(i)[j] = (uchar)(pixel_R[n/2]);
-        flareless.ptr<uchar>(i)[j+1] = (uchar)(pixel_G[n/2]);
-        flareless.ptr<uchar>(i)[j+2] = (uchar)(pixel_B[n/2]);
-        */
-
         //MIN
-        flareless.ptr<uchar>(i)[j] = (uchar)(*min_element(pixel_R.begin(), pixel_R.end()));
-        flareless.ptr<uchar>(i)[j+1] = (uchar)(*min_element(pixel_G.begin(), pixel_G.end()));
-        flareless.ptr<uchar>(i)[j+2] = (uchar)(*min_element(pixel_B.begin(), pixel_B.end()));
-
-        /*
-        //MAX
-        flareless.ptr<uchar>(i)[j] = (uchar)(*max_element(pixel_R.begin(), pixel_R.end()));
-        flareless.ptr<uchar>(i)[j+1] = (uchar)(*max_element(pixel_G.begin(), pixel_G.end()));
-        flareless.ptr<uchar>(i)[j+2] = (uchar)(*max_element(pixel_B.begin(), pixel_B.end()));
-        */
+      flareless.ptr<uchar>(i)[j] = static_cast<uchar>(*min_element(pixel_R.begin(), pixel_R.end()));
+      flareless.ptr<uchar>(i)[j+1] = static_cast<uchar>(*min_element(pixel_G.begin(), pixel_G.end()));
+      flareless.ptr<uchar>(i)[j+2] = static_cast<uchar>(*min_element(pixel_B.begin(), pixel_B.end()));
     }
   }
-  // FIXME: output file name should be specified on the command line
-  imwrite(output_folder+"flareless.jpg", flareless);
-
-  // FIXME: what for? has no effect without imshow().
-  waitKey(0);
+  cv::imwrite(p_out.native(), flareless);
 }
