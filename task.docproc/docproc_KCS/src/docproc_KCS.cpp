@@ -13,7 +13,7 @@ Mat rotate_img(Mat src, cv::Point center, float angle, float scale = 1.0)
 float find_vert_direction(Mat& src)
 {
   Mat const strel = cv::getStructuringElement(0, Size(1, 50));
-  float max_angle = 5;
+  float max_angle = 80;
   int max_iter = 20;
   float min_mean = 500;
   float ret_angle = 0;
@@ -26,7 +26,7 @@ float find_vert_direction(Mat& src)
     cv::morphologyEx(rotated, filtred, cv::MORPH_DILATE, strel); // vertical lines are deleted if angle is wrong
 
     filtred = rotate_img(filtred, cv::Point(src.cols/2, src.rows/2), -angle); // rotate back
-    float mean = cv::mean(filtred(cv::Rect(src.cols/2-250, src.rows/2-250, 500, 500)))[0];
+    float mean = cv::mean(filtred(cv::Rect(src.cols/4, src.rows/4, src.rows/4, src.rows/2)))[0];
 
     if (mean < min_mean)
     {
