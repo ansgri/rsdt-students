@@ -1,1 +1,2 @@
 add_subdirectory(char_rec)
+add_subdirectory(char_another)
